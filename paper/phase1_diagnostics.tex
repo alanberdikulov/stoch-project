@@ -25,14 +25,14 @@ combinatorial problem. We characterise all three on the train block.
 For each stock $i$ we estimate the Orlicz norms
 $\|R_{:,i}\|_{\psi_2} := \inf\{c>0: \mathbb E[\exp(R_{:,i}^2/c^2)]\le 2\}$ and
 $\|R_{:,i}\|_{\psi_1} := \inf\{c>0: \mathbb E[\exp(|R_{:,i}|/c)]\le 2\}$ via the standard
-empirical-moment estimator on standardised returns. Both norms are \emph{finite for every
+empirical-moment estimator on standardised returns \cite{lec:subexp}. Both norms are \emph{finite for every
 stock} (i.e., the empirical moment-generating function exists at the canonical scale on
 all $i$): we obtain median $\|\cdot\|_{\psi_2}=3.63$ vs.\ Gaussian reference $1.63$, and
 median $\|\cdot\|_{\psi_1}=1.66$ vs.\ Laplace reference $1.44$.
 
 \noindent\emph{Implication.} The data are sub-Gaussian but with $\psi_2$ inflated by a
 factor of roughly $2\times$ over the Gaussian benchmark. This puts us squarely in the
-Bernstein regime: any concentration argument we deploy (e.g., for max-norm of $\hat\mu$ or
+Bernstein regime \cite{lec:concentration}: any concentration argument we deploy (e.g., for max-norm of $\hat\mu$ or
 for entrywise covariance bounds) carries an effective variance proxy
 $\hat\nu^2 \approx (3.63/1.63)^2 \cdot \nu_{\mathrm{Gaussian}}^2 \approx 5\,\nu_{\mathrm{Gaussian}}^2$.
 We will use $\hat\nu$ to instantiate the recovery threshold of
@@ -53,7 +53,7 @@ Theorem~\ref{prop:slh-recovery} on real data.
 
 \subsection{Spectral structure of $\hat\Sigma$}\label{ssec:spectrum}
 
-For the empirical covariance with $n/T=0.186$ the Marchenko-Pastur edges (under iid
+For the empirical covariance with $n/T=0.186$ the Marchenko-Pastur edges \cite{lec:rmt} (under iid
 isotropic returns of unit variance, rescaled to the empirical trace) are
 $\lambda_\pm = (1\pm\sqrt{n/T})^2 = (1\pm 0.4316)^2$ scaled by
 $\bar\sigma^2 := \tfrac1n\,\mathrm{tr}(\hat\Sigma)$. Concretely
@@ -93,7 +93,7 @@ $\eta\, I$ term tames the bulk.
 \subsection{Failure of the Restricted Isometry Property}\label{ssec:rip}
 
 For the LASSO-Markowitz baseline (\S\ref{sec:lasso}) to provably recover the true sparse
-support one wants $\hat\Sigma$ to satisfy a Restricted Isometry Property (RIP). The
+support one wants $\hat\Sigma$ to satisfy a Restricted Isometry Property (RIP) \cite{lec:cs}. The
 standard $k$-RIP constant is
 \[
   \delta_k(\hat\Sigma) \;:=\; \sup_{|S|\le k}\,\big|\lambda_{\max}(\hat\Sigma_{S,S}) - 1\big| \;\vee\;

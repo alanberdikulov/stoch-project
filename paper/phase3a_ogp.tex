@@ -25,6 +25,9 @@ back in.
 
 \subsection{Planted-spike portfolio model}
 
+The construction below is the portfolio-selection analogue of the planted models familiar from
+the hidden-clique problem \cite{lec:hidden-clique} and the largest-submatrix problem \cite{lec:largest-submatrix}.
+
 Fix integers $n,k$ with $k = \rho\, n$ for some density $\rho\in(0,1/2)$. The slice
 $\Omega_{n,k} := \{\sigma\in\{0,1\}^n : \sum_{i}\sigma_i = k\}$ encodes cardinality-$k$
 portfolios as binary supports. Fix a planted target $\sigma^\star\in\Omega_{n,k}$. We
@@ -80,7 +83,7 @@ $N_y$ terms.
 
 Take $\rho$ fixed, $\alpha=a\sqrt n$ with $a>0$ a constant, and threshold $T = a\sqrt{nk}$
 (the expected score of the planted). Stirling and the standard Gaussian tail bound
-$\overline\Phi(x)\leq e^{-x^2/2}$ give
+$\overline\Phi(x)\leq e^{-x^2/2}$ give (a Cram\'er-style large-deviation rate function in disguise \cite{lec:cramer})
 \begin{equation}
 \frac{1}{n}\log\mathbb E|A_T(y)| \;\leq\; L(y;a,\rho) + o(1),\qquad
 \boxed{\ L(y;\,a,\rho) := s_\rho(y) - \tfrac{a^2}{2}(1-y)^2,\ }
@@ -227,7 +230,7 @@ $(40,10)$ provides empirical evidence \emph{that} the geometric barrier is real.
 
 Theorems~\ref{thm:detect} and \ref{thm:forbid} produce a forbidden-overlap interval that is
 \emph{single-sided}: the forbidden region is $[\rho+\delta, y_a(\rho)-\delta]$, a single
-interval terminating before the planted point. The classical OGP shape of \citep{gamarnik2017overlap}
+interval terminating before the planted point. The classical OGP shape of \cite{lec:opt-er, lec:largest-submatrix}
 is a forbidden interval $(y_\ell, y_h)\subsetneq(\rho,1)$ that is \emph{interior}, separating
 two non-trivial allowed components. We close with three remarks.
 
@@ -246,7 +249,7 @@ by~\eqref{eq:model}. Phase~1 showed $\hat\Sigma$ has $32$ outlier eigenvalues, s
 quadratic form is a low-rank deterministic spike plus an isotropic random part. The
 isotropic random part contributes a Sherrington-Kirkpatrick-like coupling between subsets
 that, by the standard second-moment argument
-(\citep{gamarnik2017overlap, ding2015proof}), is expected to produce an
+\cite{lec:sg, lec:opt-er}, is expected to produce an
 interior forbidden interval at intermediate inverse temperature.
 
 \item \textbf{Empirical verification.} The forbidden-overlap interval in
