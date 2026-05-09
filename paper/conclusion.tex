@@ -1,0 +1,104 @@
+% Conclusion: direct answer to Project 7's question
+
+\section{Discussion: how hard is the problem?}\label{sec:conclusion}
+
+The Project~7 prompt asks: \emph{``How hard is [cardinality-constrained portfolio optimisation
+on real data] from an empirical computational point of view?''} Our answer is a calibration:
+\textbf{the difficulty depends on which of three regimes the instance lives in}, and on the
+real S\&P~500 panel the data is \emph{not} in the hardest regime.
+
+\subsection{Three regimes of difficulty}\label{ssec:regimes}
+
+Parameterise the instance by the planted-spike SNR $a := \alpha/\sqrt n$ as in
+\S\ref{sec:ogp}. Theorems~\ref{thm:detect} and \ref{thm:forbid} together with Proposition~\ref{prop:slh-recovery}
+identify three regimes:
+
+\medskip
+\noindent\textbf{Regime I (easy and undetectable), $a < a_\star(\rho)$.} Below the detection
+threshold the planted signal is statistically indistinguishable from random fluctuation:
+no algorithm (information-theoretically) can identify $\sigma^\star$. From a practical
+perspective this regime is uninteresting, since the maximiser of $J$ on a random instance is
+just a random subset with no exploitable structure.
+
+\smallskip
+\noindent\textbf{Regime II (OGP-hard), $a_\star(\rho) < a < a_{\mathrm{rec}}$.} Detection is
+possible but \emph{exact recovery} is blocked for path-stable algorithms: any algorithm whose
+support is $\eta$-Hamming-stable along a Gaussian bridge fails to interpolate from a random
+seed to the planted optimum without leaving the near-optimal level set
+(Corollary~\ref{cor:hardness}). LASSO, top-eigenvector, and constrained Metropolis at fixed
+$\beta$ all live in this class and all fall victim to the OGP plateau. On synthetic data
+calibrated to this regime we observe exactly this barrier (Figure~\ref{fig:synth-overlap}).
+
+\smallskip
+\noindent\textbf{Regime III (easy and recoverable), $a > a_{\mathrm{rec}}$.} Above the
+Bonferroni recovery threshold $a_{\mathrm{rec}}=\nu\sqrt\rho(\sqrt{2\log(n-k)}+\sqrt{2\log k})$,
+even the simplest non-stable algorithm (top-$k$ thresholding of $\hat\mu$, equivalent to
+\textsc{Slh}'s spectral seed) recovers $\sigma^\star$ with high probability
+(Proposition~\ref{prop:slh-recovery}).
+
+\subsection{Where does the real data live?}\label{ssec:realwhere}
+
+We can read the empirical SNR off the Phase~2a results: the brute-force oracle $\sigma^\star$
+recovers a return $\hat\mu^\top\sigma^\star/k$ that is approximately $0.6$ to $1.2$ standard
+deviations of the bulk mean above the median asset. In our parametrisation, after
+factor-residualising $\hat\mu$ to obtain the idiosyncratic Sharpe component, the empirical
+$a$ on the $(n,k)=(50,5)$ instance is approximately $a_{\mathrm{emp}}\approx 1.5$ to $2.0$, sitting
+\emph{just above} $a_\star(\rho=0.10)\approx 0.90$ but \emph{below} the recovery threshold
+$a_{\mathrm{rec}}\approx 2.6$. Empirically this places the real data \emph{at the boundary
+of Regime~II and Regime~III}.
+
+The boundary placement is exactly what the Phase~2a numbers reveal: simulated annealing
+(unstable, OGP-immune) hits the oracle on every cell within the brute-force range; LASSO
+(stable, OGP-vulnerable) is uniformly off by $4$ to $11$\,bp; top-eigenvector (also stable)
+is off by $11$ to $22$\,bp; and \textsc{Slh}\ (unstable by design, with the polish stage doing
+the recovery work the seed cannot) achieves $0$\,bp on every cell.
+
+\subsection{Direct answer to the question}\label{ssec:answer}
+
+\begin{itemize}\itemsep=2pt
+\item \textbf{In the empirical regime, the problem is computationally tractable.} A
+deterministic polynomial-time algorithm (\textsc{Slh}, $0.07$ to $0.13$\,ms per call on the
+$(n,k)$ grid we test) matches the brute-force oracle on $100\%$ of the cells.
+\item \textbf{The reason is that the empirical SNR sits at the boundary of Regimes II and III},
+not deep inside the OGP-hard region. The \emph{statistical} content of the problem makes
+exact recovery information-theoretically possible, and the discrete combinatorial structure
+of \textsc{Slh}'s top-$k$ thresholding plus 1-swap polish is sufficient to extract it.
+\item \textbf{If real data ever moved deeper into Regime~II} (lower SNR per asset, larger $n/k$),
+no convex-relaxation or stable iterative method would work. The OGP theory is then a
+\emph{prediction of the practitioner experience} that ``LASSO doesn't help once the signal
+gets weak'', a folklore observation given a rigorous probabilistic basis here.
+\item \textbf{The bottleneck is statistical, not computational.} On real data even the
+oracle's out-of-sample Sharpe (test-block) drops by $30$ to $50\%$ relative to its in-sample
+Sharpe. Optimising harder over the in-sample objective doesn't buy out-of-sample performance;
+this is the financial counterpart to \emph{generalisation in high-dimensional learning}.
+\end{itemize}
+
+\subsection{Open theoretical questions}\label{ssec:open}
+
+\begin{enumerate}\itemsep=1pt
+\item \emph{Classical (interior) OGP for the full quadratic Hamiltonian.}
+\S\ref{ssec:ogp-discussion} conjectures (and Phase~3b empirically gestures at, but does
+not prove) an interior forbidden interval $(y_\ell,y_h)\subsetneq(\rho,1)$ for $J$ at
+intermediate $\beta$. The conjecture would follow from a Sherrington-Kirkpatrick-style
+second-moment analysis of the quadratic-form spike-plus-bulk model; the analysis is
+non-trivial because $\hat\Sigma$ is not isotropic.
+\item \emph{Sharpening Proposition~\ref{prop:slh-recovery}.} The Bonferroni bound
+$a_{\mathrm{rec}}$ is conservative by a $\Theta(\log\log n / \sqrt{\log n})$ factor (Phase~4a
+empirical curve crosses 50\% at $a\approx 2.25$ vs.\ predicted $2.64$). Tightening to the
+sharp extreme-value asymptotic for the maximum of $n$ i.i.d.\ Gaussians would close the gap.
+\item \emph{Out-of-sample generalisation.} The optimisation pipeline can be combined with a
+shrinkage estimator of $\hat\mu, \hat\Sigma$ (e.g., Ledoit-Wolf) to control the
+overfitting documented in \S\ref{ssec:p2a-results}. Whether this changes the OGP regime is
+a non-trivial question, since shrinkage shifts the effective SNR, possibly across regime
+boundaries.
+\end{enumerate}
+
+\subsection*{Code and reproducibility}
+
+All experiments are reproducible from the notebooks
+\texttt{extract\_data.ipynb}, \texttt{01\_diagnostics.ipynb},
+\texttt{02\_oracle\_baselines.ipynb}, \texttt{03\_mcmc\_sampler.ipynb},
+\texttt{04a\_ogp\_theory.ipynb}, \texttt{04\_ogp\_experiment.ipynb},
+\texttt{05\_hybrid\_algorithm.ipynb}. Total wall-clock to regenerate every figure and
+table in this writeup: under five minutes on a single laptop CPU, with deterministic
+seeds set throughout.

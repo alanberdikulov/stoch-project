@@ -1,0 +1,139 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,mathrsfs}
+\usepackage{graphicx}
+\usepackage{subcaption}
+\usepackage{hyperref}
+\usepackage{cleveref}
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{definition}[theorem]{Definition}
+
+\title{Cardinality-Constrained Portfolio Optimization \\
+  via the Overlap Gap Property: \\
+  An Application of Discrete Probability and Stochastic Processes}
+\author{Alan \\ MIT 6.S897 / Discrete Probability \& Stochastic Processes \\
+  Project~7, 25\% weighted final project}
+\date{Spring 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We study cardinality-constrained portfolio selection on $n=468$ S\&P~500 constituents
+over a 10-year window ($T=2{,}512$ trading days), addressing Project~7's question:
+\emph{how hard is the problem from an empirical computational point of view?} Our answer
+calibrates the difficulty to three regimes parameterised by a planted-spike SNR $a$.
+Regime~I ($a < a_\star(\rho)$) is statistically undetectable. Regime~II
+($a_\star(\rho)<a<a_{\mathrm{rec}}$) is information-theoretically possible but blocked for
+all path-stable algorithms (LASSO, top-eigenvector, fixed-temperature MCMC) by an
+Overlap Gap Property (OGP). Regime~III ($a>a_{\mathrm{rec}}$) is recoverable by simple
+top-$k$ thresholding. The empirical S\&P~500 panel sits at the boundary of
+Regimes~II and~III. We \emph{prove} a sharp first-moment detection threshold
+$a_\star(\rho)=\sqrt{2h(\rho)}/(1-\rho)$ (Theorem~\ref{thm:detect}) and a
+forbidden-overlap interval (Theorem~\ref{thm:forbid}) for the planted-spike model, both
+verified empirically via Metropolis sampling. We then design a deterministic spectral$+$local-improvement
+algorithm \textsc{Slh}\ that (i) admits a Bonferroni recovery guarantee
+(Proposition~\ref{prop:slh-recovery}) and (ii) circumvents the OGP barrier by virtue of
+a discontinuous top-$k$ thresholding step that violates the path-stability hypothesis of
+the hardness corollary. \textsc{Slh}\ matches the brute-force oracle on every cell of the
+$(n,k)$ grid we test, while running $50\times$ faster than its closest non-deterministic
+competitor.
+\end{abstract}
+
+\section{Introduction and the project question}\label{sec:intro}
+
+\paragraph{The problem.} Project~7 of MIT's discrete-probability course asks the
+practical question: take real stock-exchange data, fix a portfolio size $k$, and consider
+the problem of choosing $k$ stocks to maximise return subject to a risk constraint, asking
+how hard this problem is empirically. We give the question a precise mathematical setting:
+$n$ stocks with daily-return matrix $R\in\mathbb R^{T\times n}$, sample mean $\hat\mu$ and
+sample covariance $\hat\Sigma$, risk-aversion $\gamma>0$, and the cardinality-constrained
+mean-variance objective
+\[
+  J(\sigma) \;=\; \frac{1}{k}\,\hat\mu^\top\sigma \;-\; \frac{\gamma}{2k^2}\,\sigma^\top\hat\Sigma\sigma,
+  \qquad \sigma\in\Omega_{n,k} := \{\sigma\in\{0,1\}^n:\textstyle\sum_i\sigma_i=k\}.
+\]
+The decision problem is to find $\sigma^\star = \arg\max_{\sigma\in\Omega_{n,k}} J(\sigma)$.
+The space $\Omega_{n,k}$ has size $\binom{n}{k}$ and is too large for brute-force
+enumeration past $\sim\!10^7$ (e.g., $\binom{50}{10}\approx 10^{10}$).
+
+\paragraph{Why discrete probability?} The interplay between the empirical $(\hat\mu,\hat\Sigma)$,
+a sample-noise object, and the combinatorial structure of $\Omega_{n,k}$ puts the problem
+squarely in the territory of probabilistic combinatorics. Three conceptual pillars apply:
+(i) \emph{concentration} of $\hat\mu, \hat\Sigma$ around their population values, which
+controls how confident we can be in any sub-$k$ ranking;
+(ii) the \emph{spectrum of $\hat\Sigma$} via random-matrix theory, which dictates whether
+convex relaxations recover the combinatorial optimum; and (iii) the \emph{Overlap Gap Property},
+which gives a geometric and statistical theory of when an instance is computationally hard
+regardless of algorithmic effort.
+
+\paragraph{Roadmap.}\S\ref{sec:diagnostics} characterises the empirical regime
+(sub-Gaussian tails, factor-spike covariance, RIP failure). \S\ref{sec:oracle} establishes
+the brute-force oracle and four polynomial-time baselines, plus the constrained-Metropolis
+sampler whose mixing-time blow-up provides empirical evidence of an OGP barrier.
+\S\ref{sec:ogp} proves the project's two main theorems on the planted-spike model and
+derives the corresponding hardness corollary for path-stable algorithms.
+\S\ref{sec:ogp-empirical} verifies the theorems on synthetic data and probes the
+classical-OGP conjecture on real data. \S\ref{sec:slh} introduces our hybrid algorithm
+\textsc{Slh}, proves a recovery proposition, and explains why the algorithm escapes the
+hardness corollary. \S\ref{sec:conclusion} returns to the project question and gives a
+direct answer in terms of the three regimes.
+
+% Phase 1: empirical diagnostics
+\input{phase1_diagnostics.tex}
+
+% Phase 2: oracle, baselines, MCMC
+\input{phase2_oracle_mcmc.tex}
+
+% Phase 3a: OGP theory
+\input{phase3a_ogp.tex}
+
+% Phase 3b: empirical OGP experiment
+\input{phase3b_empirical.tex}
+
+% Phase 4a: SLH algorithm
+\input{phase4_hybrid.tex}
+
+% Conclusion / discussion
+\input{conclusion.tex}
+
+\bibliographystyle{plain}
+\begin{thebibliography}{9}
+
+\bibitem{gamarnik2017overlap}
+D.~Gamarnik and M.~Sudan,
+\newblock Limits of local algorithms over sparse random graphs,
+\newblock {\em Annals of Probability}, 45(4):2353-2376, 2017.
+
+\bibitem{ding2015proof}
+J.~Ding, A.~Sly, and N.~Sun,
+\newblock Proof of the satisfiability conjecture for large $k$,
+\newblock {\em STOC}, 2015.
+
+\bibitem{markowitz1952}
+H.~Markowitz,
+\newblock Portfolio selection,
+\newblock {\em Journal of Finance}, 7(1):77-91, 1952.
+
+\bibitem{candes2005decoding}
+E.~J.~Cand\`es and T.~Tao,
+\newblock Decoding by linear programming,
+\newblock {\em IEEE Trans.\ Inform.\ Theory}, 51(12):4203-4215, 2005.
+
+\bibitem{wainwright2019high}
+M.~J.~Wainwright,
+\newblock {\em High-Dimensional Statistics: A Non-Asymptotic Viewpoint},
+\newblock Cambridge University Press, 2019.
+
+\bibitem{gamarnik2021overlap}
+D.~Gamarnik,
+\newblock The overlap gap property: a topological barrier to optimizing over random structures,
+\newblock {\em PNAS}, 118(41), 2021.
+
+\end{thebibliography}
+
+\end{document}

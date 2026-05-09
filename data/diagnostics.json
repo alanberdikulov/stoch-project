@@ -1,0 +1,15 @@
+{
+  "T": 2512,
+  "n": 468,
+  "date_start": "2016-05-11",
+  "date_end": "2026-05-07",
+  "mean_daily_mu_bp": 4.716083155222889,
+  "mean_daily_sd_pct": 2.015152175903405,
+  "median_psi2_proxy": 0.7021044170145152,
+  "median_psi1_proxy": 0.6832162671335209,
+  "lambda_max_cov": 0.07008461693626353,
+  "lambda_2_cov": 0.00986789832441212,
+  "lambda_min_cov": 1.2286635959056285e-06,
+  "top10_eig_share": 0.5308303189002197,
+  "wigner_2sigma_sqrt_n": 0.8153967744378554
+}

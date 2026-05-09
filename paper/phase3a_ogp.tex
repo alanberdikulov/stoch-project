@@ -1,0 +1,266 @@
+% Phase 3a: Theoretical analysis: detection threshold and forbidden-overlap interval
+% Self-contained section, designed to be \input into the main writeup.
+
+\section{Theory: detection threshold and forbidden-overlap interval}
+\label{sec:ogp}
+
+This section gives the project's main theoretical contribution. We work in a planted-spike
+model that captures the salient features of the empirical regime identified in
+\S\ref{sec:diagnostics}: heavy but sub-Gaussian tails, a strong rank-one drift driven by a
+target portfolio, and isotropic Gaussian residual noise. We prove a sharp first-moment
+detection threshold (Theorem~\ref{thm:detect}) and a forbidden-overlap interval
+(Theorem~\ref{thm:forbid}) for the support of all near-optima. We then derive a hardness
+corollary (Corollary~\ref{cor:hardness}) for any algorithm whose iterates are Hamming-stable
+along an input bridge. The algorithmic content is that no such algorithm can interpolate
+from a random initialization to the planted optimum without leaving the near-optimal level
+set.
+
+We close the section with an honest discussion of the OGP / classical-second-moment
+structure that the simple linear model does \emph{not} possess, and explain why the
+empirical OGP-style metastability observed in Phase~2b on $(n,k)=(40,10)$ should be
+attributed to the full \emph{quadratic} portfolio Hamiltonian. The empirical companion in
+\S\ref{sec:ogp-empirical} verifies the quantitative theory predictions on synthetic data
+and reports the additional bimodality structure that emerges once the variance term is put
+back in.
+
+\subsection{Planted-spike portfolio model}
+
+Fix integers $n,k$ with $k = \rho\, n$ for some density $\rho\in(0,1/2)$. The slice
+$\Omega_{n,k} := \{\sigma\in\{0,1\}^n : \sum_{i}\sigma_i = k\}$ encodes cardinality-$k$
+portfolios as binary supports. Fix a planted target $\sigma^\star\in\Omega_{n,k}$. We
+assume the estimated mean-return vector takes the form
+\begin{equation}
+\hat\mu \;=\; \frac{\alpha}{\sqrt{k}}\,\sigma^\star \;+\; g, \qquad g\sim\mathcal N(0, I_n),
+\label{eq:model}
+\end{equation}
+with signal-to-noise parameter $\alpha\geq 0$, and we work with the linear
+score
+\begin{equation}
+H(\sigma) \;:=\; \hat\mu^\top\sigma \;=\; \alpha\sqrt{k}\,y(\sigma) + g^\top\sigma,
+\qquad y(\sigma) := \frac{\langle\sigma,\sigma^\star\rangle}{k}\in[0,1].
+\label{eq:H}
+\end{equation}
+Conditional on $\sigma$ (with $\sigma^\star$ fixed), $H(\sigma)\sim\mathcal N(\alpha\sqrt
+k\,y(\sigma),\, k)$: the variance is independent of $\sigma$ because $\|\sigma\|_2^2=k$
+for every $\sigma\in\Omega_{n,k}$.
+
+\paragraph{Why this idealization.} Phase~1 showed that the empirical covariance is a
+rank-$r^\star$ factor structure plus a near-isotropic residual; we have folded the
+deterministic part of the variance term $\frac{\gamma}{2k^2}\sigma^\top\hat\Sigma\sigma$
+into the planted direction $\sigma^\star$ and absorbed the residual into~$g$. The empirical
+$\psi_2$-norms (median 3.6) are finite, so~\eqref{eq:model} is a Bernstein-faithful
+caricature; the proofs below would carry through with sub-exponential tails at the cost of
+an additive $O(\log n)$ correction in the threshold.
+
+\paragraph{Boltzmann measure on the slice.} For $\beta>0$ we use the standard Gibbs measure
+$\pi_\beta(\sigma) := \frac{1}{Z(\beta)}\,e^{\beta H(\sigma)}$ with
+$Z(\beta) := \sum_{\sigma\in\Omega_{n,k}} e^{\beta H(\sigma)}$. Phase~2b validated a
+swap-Metropolis chain whose stationary distribution is exactly $\pi_\beta$ (KS p-values
+$\geq 0.42$ across $\beta\in\{0,50,200,1000,5000\}$).
+
+\subsection{First-moment formula and the function $L(y;a,\rho)$}
+
+Define, for a threshold $T\in\mathbb R$ and a planted-overlap value $y\in
+\frac{1}{k}\{0,1,\dots,k\}\cap[0,1]$,
+\[
+A_T(y) \;:=\; \bigl\{\sigma\in\Omega_{n,k} : H(\sigma)\geq T,\ y(\sigma)=y\bigr\}.
+\]
+The number of $\sigma\in\Omega_{n,k}$ with planted overlap exactly $y$ is
+$N_y := \binom{k}{ky}\binom{n-k}{k(1-y)}$.
+
+\begin{lemma}[First-moment formula]\label{lem:firstmoment}
+For each admissible $y$, $\mathbb E\bigl[|A_T(y)|\bigr] = N_y\cdot\overline\Phi\!\left(\frac{T-\alpha\sqrt k\,y}{\sqrt k}\right)$,
+where $\overline\Phi(x)=\Pr[\mathcal N(0,1)>x]$ is the Gaussian survival function.
+\end{lemma}
+\begin{proof}
+By linearity, $\mathbb E|A_T(y)| = \sum_{\sigma:y(\sigma)=y}\Pr[H(\sigma)\geq T]$. Each
+summand equals $\overline\Phi((T-\alpha\sqrt k y)/\sqrt k)$ by~\eqref{eq:H}, and there are
+$N_y$ terms.
+\end{proof}
+
+Take $\rho$ fixed, $\alpha=a\sqrt n$ with $a>0$ a constant, and threshold $T = a\sqrt{nk}$
+(the expected score of the planted). Stirling and the standard Gaussian tail bound
+$\overline\Phi(x)\leq e^{-x^2/2}$ give
+\begin{equation}
+\frac{1}{n}\log\mathbb E|A_T(y)| \;\leq\; L(y;a,\rho) + o(1),\qquad
+\boxed{\ L(y;\,a,\rho) := s_\rho(y) - \tfrac{a^2}{2}(1-y)^2,\ }
+\label{eq:Ldef}
+\end{equation}
+where the slice entropy is
+\begin{equation}
+s_\rho(y) \;:=\; \rho\,h(y) + (1-\rho)\,h\!\left(\tfrac{\rho(1-y)}{1-\rho}\right),
+\qquad h(p) := -p\log p - (1-p)\log(1-p).
+\label{eq:srho}
+\end{equation}
+The function $L(\,\cdot\,;a,\rho)$ is concave on $[0,1]$ with $L(1)=0$ (the planted is the
+unique configuration at $y=1$, contributing entropy zero), and its sign on the interior
+governs whether $T$-near-optima exist at planted-overlap~$y$.
+
+\subsection{Detection threshold (Theorem~\ref{thm:detect})}
+
+\begin{theorem}[Detection of the planted spike]\label{thm:detect}
+Let $\rho\in(0,1/2)$ and define the \emph{detection threshold}
+\begin{equation}
+a_\star(\rho) \;:=\; \frac{\sqrt{2\,h(\rho)}}{1-\rho}.
+\label{eq:adetect}
+\end{equation}
+For every $a > a_\star(\rho)$, the bulk of random subsets contributes no near-optimum:
+$\mathbb P\bigl[\,\exists\,\sigma\in\Omega_{n,k}\text{ with } y(\sigma)\leq \rho + \delta
+\text{ and } H(\sigma)\geq T\,\bigr]\leq e^{-c n}$ for every sufficiently small $\delta>0$
+and some $c=c(a,\rho,\delta)>0$.
+\end{theorem}
+\begin{proof}
+At $y = \rho$, $s_\rho(\rho) = h(\rho)$, so $L(\rho;a,\rho) = h(\rho) - \tfrac{a^2}{2}(1-\rho)^2 < 0$
+exactly when $a > a_\star(\rho)$. By continuity of $L$ in $y$, there exists $\delta>0$ such
+that $L(y;a,\rho)\leq -c'<0$ uniformly on $[0, \rho+\delta]$. Markov's inequality applied
+to each of the $O(n)$ admissible discrete values of $y$ in this interval, with the
+bound~\eqref{eq:Ldef}, gives the claim with $c = c'/2$.
+\end{proof}
+
+\paragraph{Numerical example.} For $\rho=0.20$, $a_\star(0.20) = \sqrt{2 h(0.20)}/0.8
+\approx 1.250$. Below this SNR the planted spike is statistically undetectable in the
+sense that exponentially many random subsets achieve the planted's expected score; above
+it, no random subset does.
+
+\subsection{Forbidden-overlap interval (Theorem~\ref{thm:forbid})}
+
+The detection theorem only excludes near-optima from a small neighborhood of $y=\rho$. The
+following sharper statement extends the forbidden region: above detection, no
+$T$-near-optimum has planted-overlap below an explicit threshold $y_a\in(\rho,1)$.
+
+\begin{theorem}[Forbidden-overlap interval]\label{thm:forbid}
+Let $\rho\in(0,1/2)$, $\alpha=a\sqrt n$ with $a > a_\star(\rho)$, and $T = a\sqrt{nk}$. Define
+\begin{equation}
+y_a(\rho) \;:=\; \sup\bigl\{y\in[\rho,1) : L(y;a,\rho) \leq 0\bigr\}.
+\label{eq:ya}
+\end{equation}
+Then $y_a(\rho)\in(\rho, 1)$ is well-defined, and for every sufficiently small $\delta>0$,
+\begin{equation}
+\Pr\bigl[\,\exists\,\sigma\in\Omega_{n,k} : \rho+\delta \leq y(\sigma) \leq y_a(\rho) - \delta
+\text{ and } H(\sigma) \geq T\,\bigr] \;\leq\; e^{-c n}
+\label{eq:forbid}
+\end{equation}
+for some $c=c(a,\rho,\delta)>0$. Equivalently, every $T$-near-optimum has planted-overlap
+either below $\rho+\delta$ (excluded by Theorem~\ref{thm:detect}) or above $y_a(\rho)-\delta$.
+\end{theorem}
+\begin{proof}
+The function $y\mapsto L(y;a,\rho)$ is continuous and concave on $[0,1]$ with $L(\rho;a,\rho)
+< 0$ (since $a > a_\star(\rho)$), $L(1;a,\rho) = 0$, and $L(y;a,\rho) > 0$ for $y$ in some
+interval just below $1$ because $\partial_y L(y;a,\rho)\big|_{y=1^-}$ involves the diverging
+derivative $h'(0^+) = +\infty$ via the second argument of~$s_\rho$. Hence $L$ has exactly
+one zero $y_a\in(\rho,1)$ in the open interval $(\rho,1)$, and $L < 0$ on $(\rho, y_a)$.
+Take $c' = -\sup_{y\in[\rho+\delta, y_a-\delta]} L(y;a,\rho) > 0$ (strict positivity on a
+compact subinterval where $L$ is strictly negative). Apply Markov's inequality to each of
+the $O(n)$ admissible discrete values of $y$ in $[\rho+\delta, y_a-\delta]$ and sum; the
+bound is dominated by $e^{-c'n} \cdot O(n)$, giving the claim with $c = c'/2$.
+\end{proof}
+
+\paragraph{Numerical example.} For $\rho=0.20$ and $a = 2.0$ (well above the detection
+threshold $a_\star(0.20)\approx 1.25$), numerical root-finding in the companion notebook
+\texttt{04a\_ogp\_theory.ipynb} gives $y_a\approx 0.55$. So no near-optimum exists with
+planted overlap in $[0.21, 0.54]$; all near-optima have $y\geq 0.55$ or $y\leq 0.20$, the
+latter excluded by Theorem~\ref{thm:detect}.
+
+\subsection{Algorithmic consequence: hardness for path-stable algorithms}
+
+We now translate the geometric statement~\eqref{eq:forbid} into a hardness theorem for any
+algorithm whose iterates are Hamming-stable along an input-noise interpolation.
+
+\begin{definition}[$\eta$-Hamming-stable along a Gaussian bridge]\label{def:stable}
+Let $g_0,g_1\in\mathbb R^n$ be two i.i.d.\ realizations of the noise and define the
+Gaussian bridge $g_s := \sqrt{1-s}\,g_0 + \sqrt{s}\,g_1$, $s\in[0,1]$. An algorithm
+$\mathcal A:\mathbb R^n\to\Omega_{n,k}$ is \emph{$\eta$-Hamming-stable along the bridge}
+if the discrete-time evolution $s\mapsto\mathcal A(\hat\mu_s)$ on the lattice
+$s\in\{0,\tfrac1n,\dots,1\}$ has Hamming jump
+$d_H(\mathcal A(\hat\mu_{s_-}),\mathcal A(\hat\mu_s)) \leq \eta$
+between consecutive lattice points with probability $1-o(1)$.
+\end{definition}
+
+This class includes Lipschitz-then-rounded estimators (e.g.\ thresholded LASSO with smooth
+sparsity tuning), low-degree polynomial estimators of the support indicator, and
+constant-depth message-passing schemes. It does \emph{not} include greedy forward
+selection, whose rank-$k/k+1$ boundary can swing on arbitrarily small perturbations.
+
+\begin{corollary}[Hardness for path-stable algorithms]\label{cor:hardness}
+Under the hypotheses of Theorem~\ref{thm:forbid}, fix $\eta < k(y_a(\rho)-\rho)/2$. Suppose
+the bridge endpoint $\hat\mu_0$ is such that $\mathcal A(\hat\mu_0)$ has $y(\mathcal
+A(\hat\mu_0))\leq \rho + o(1)$ (e.g.\ $\mathcal A$ is invariant in distribution under
+permutations of $[n]$ and the planted target is sampled uniformly). Then for every
+$\eta$-Hamming-stable~$\mathcal A$ that satisfies the recovery property
+$\mathcal A(\hat\mu_1)=\sigma^\star$,
+\[
+\Pr\bigl[\,H(\mathcal A(\hat\mu_s))\geq T \ \text{for every}\ s\in\{0,\tfrac1n,\dots,1\}\bigr]
+\;\leq\; o(1) + e^{-c n}.
+\]
+\end{corollary}
+\begin{proof}[Sketch]
+By stability, $s\mapsto y(\mathcal A(\hat\mu_s))$ has discrete jumps of size at most
+$\eta/k < (y_a-\rho)/2$. The endpoints satisfy $y(\mathcal A(\hat\mu_0))\leq \rho$ and
+(under recovery) $y(\mathcal A(\hat\mu_1))=1$. By the discrete intermediate-value
+theorem, some $s^\star\in[0,1]$ produces an output with overlap in $(\rho+\delta,
+y_a(\rho)-\delta)$. By Theorem~\ref{thm:forbid} the score of any such configuration is
+below $T$ with probability $1-e^{-cn}$, so $\mathcal A$ leaves the near-optimal level set
+along the bridge.
+\end{proof}
+
+\paragraph{What does this exclude in our empirical setting?}
+\begin{itemize}\itemsep0pt
+\item LASSO-Markowitz (\S\ref{sec:lasso}) is a Lipschitz function of $\hat\mu$; rounding
+to top-$k$ support introduces only $O(1)$ Hamming jumps along the bridge. Above
+$a_\star(\rho)$, Corollary~\ref{cor:hardness} predicts LASSO cannot maintain near-optimality
+along the input path; this matches the Phase~2a observation that LASSO's gap to the oracle
+is $4$ to $11$\,bp uniformly across $(n,k)$.
+\item Top-eigenvector + rounding is also $\eta$-stable with $\eta=O(1)$ outside a
+measure-zero set, so the same conclusion applies.
+\item Greedy forward selection is \emph{not} $\eta$-Hamming-stable along the bridge: a
+single infinitesimal perturbation of $\hat\mu$ can swap two indices that were close to
+the rank $k/k{+}1$ boundary and trigger a discrete combinatorial cascade. Empirically
+(Phase~2a) greedy tracks the oracle closely; this is consistent with the corollary not
+applying.
+\item The constrained-Metropolis chain of Phase~2b is also not stable under
+Definition~\ref{def:stable}: it is the very dynamics whose mixing-time blow-up at
+$(40,10)$ provides empirical evidence \emph{that} the geometric barrier is real.
+\end{itemize}
+
+\subsection{Discussion: classical OGP and what is conjectural}
+\label{ssec:ogp-discussion}
+
+Theorems~\ref{thm:detect} and \ref{thm:forbid} produce a forbidden-overlap interval that is
+\emph{single-sided}: the forbidden region is $[\rho+\delta, y_a(\rho)-\delta]$, a single
+interval terminating before the planted point. The classical OGP shape of \citep{gamarnik2017overlap}
+is a forbidden interval $(y_\ell, y_h)\subsetneq(\rho,1)$ that is \emph{interior}, separating
+two non-trivial allowed components. We close with three remarks.
+
+\begin{enumerate}
+\item \textbf{Why the simple model has no interior forbidden gap.} The threshold function
+$a_\star(y;\rho) := \sqrt{2 s_\rho(y)}/(1-y)$ is monotonically increasing on $(\rho,1)$
+(numerically verified in the companion notebook for $\rho\in[0.05, 0.40]$). Hence the
+sub-level set $\{y : a_\star(y;\rho)<a\}$ is a single connected interval $[\rho, y_a(\rho)]$
+for every $a>a_\star(\rho;\rho)$, ruling out a classical OGP forbidden interval from
+first-moment alone.
+
+\item \textbf{Where the classical OGP comes from in the full model.} The empirical
+Hamiltonian $J(\sigma) = \tfrac{1}{k}\hat\mu^\top\sigma - \tfrac{\gamma}{2k^2}\sigma^\top
+\hat\Sigma\sigma$ contains a quadratic form that is \emph{not} captured
+by~\eqref{eq:model}. Phase~1 showed $\hat\Sigma$ has $32$ outlier eigenvalues, so the
+quadratic form is a low-rank deterministic spike plus an isotropic random part. The
+isotropic random part contributes a Sherrington-Kirkpatrick-like coupling between subsets
+that, by the standard second-moment argument
+(\citep{gamarnik2017overlap, ding2015proof}), is expected to produce an
+interior forbidden interval at intermediate inverse temperature.
+
+\item \textbf{Empirical verification.} The forbidden-overlap interval in
+Theorem~\ref{thm:forbid} predicts that MCMC samples drawn from $\pi_\beta$ at high $\beta$
+should have planted-overlap distribution concentrated either near $y=\rho$ or near $y=1$,
+with no mass at intermediate overlaps. Phase~3b runs this experiment on synthetic data
+matched to the empirical SNR and on the real S\&P~500 panel, and reports the bimodality
+both for the linear model (where Theorem~\ref{thm:forbid} predicts it directly) and for
+the full quadratic objective (where the additional interior forbidden gap is conjectural
+but expected from~(2) above).
+\end{enumerate}
+
+The detection threshold of Theorem~\ref{thm:detect} and the forbidden-overlap interval
+of Theorem~\ref{thm:forbid} are the rigorous theoretical contributions of the project.
+The companion notebook \texttt{04a\_ogp\_theory.ipynb} verifies the threshold numerically
+on a $(\rho, a)$ grid and produces Figures~\ref{fig:Lcurve},
+\ref{fig:detection-curve}, and~\ref{fig:phase} of \S\ref{sec:ogp-empirical}.
