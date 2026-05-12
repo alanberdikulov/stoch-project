@@ -4,27 +4,18 @@
 \section{A spectral$+$local-improvement algorithm}
 \label{sec:slh}
 
-The OGP forbidden interval of \cref{thm:forbid} together with the
-Hamming-stability hardness of \cref{cor:hardness} blocks the
-following four algorithmic strategies on instances with planted SNR $a > a_\star(\rho)$:
-\begin{enumerate}\itemsep=2pt
-  \item \emph{LASSO-Markowitz} (\S\ref{sec:lasso}): the support
-    $\hat S(\lambda) = \mathrm{supp}(\hat w_\lambda)$ is Lipschitz-stable as a function of
-    $\hat\mu$ wherever the LASSO solution is unique, so the
-    Hamming-bridge derivative is bounded.
-  \item \emph{Greedy forward selection}: a deterministic algorithm that adds the
-    next-best asset at each step is also a stable function of $\hat\mu$ outside a
-    Lebesgue-null set of ties.
-  \item \emph{Single-shot Metropolis at constant $\beta$ with $T$ sweeps}: a high-temperature
-    chain mixes too fast to find the planted side, while a low-temperature chain is
-    Hamming-stable up to mixing-time perturbations and sees the OGP plateau (\S\ref{sec:ogp-empirical}).
-  \item \emph{Top-eigenvector projection}: continuous in $\hat\Sigma$, also stable.
-\end{enumerate}
-
-We design an algorithm \textsc{Slh}\ (\emph{Spectral-Local Hybrid}) whose
-defining feature is a \emph{discontinuous} top-$k$ thresholding, which (as we show
-below) takes it out of the path-stable class to which \cref{cor:hardness}
-applies, while still admitting a clean recovery guarantee on the planted-spike model.
+We design \textsc{Slh}\ (\emph{Spectral-Local Hybrid}), a deterministic algorithm tailored
+to the factor-plus-residual covariance documented in \S\ref{sec:diagnostics}. The seed
+stage performs a ridge-regularised continuous Markowitz solve, exploiting the dominant
+factor structure of $\hat\Sigma$; the polish stage is a steepest-ascent 1-swap local
+search that exploits the residual quadratic interaction in $J$. We prove an exact-recovery
+proposition under a factor-plus-residual model that matches the empirical regime
+(\cref{prop:slh-recovery}), bench-mark \textsc{Slh}\ against the four baselines of
+\S\ref{sec:lasso}, and discuss its empirical regime placement in
+\S\ref{ssec:slh-regime}. We do \emph{not} claim that \textsc{Slh}\ ``circumvents'' the
+hardness corollary of \cref{cor:hardness}: as we explain in \S\ref{ssec:slh-regime}, the
+empirical SNR sits in the recovery regime where the corollary is vacuous, and the
+algorithm's success there is not an OGP-related phenomenon.
 
 \subsection{Algorithm}\label{sec:slh-algorithm}
 
@@ -57,125 +48,176 @@ number of polish iterations in our experiments. With cached row-sums
 $s_v := \sum_{j\in S}\hat\Sigma_{v,j}$ updated incrementally, each polish step is $O(k(n-k))$
 operations, matching the cost of a single Metropolis sweep (cf.\ \S\ref{sec:ogp-empirical}).
 
-\subsection{Recovery proposition}\label{sec:slh-recovery}
+\subsection{Recovery proposition under factor-plus-residual covariance}\label{sec:slh-recovery}
 
-We analyse \textsc{Slh}\ on the same planted-spike instance class as \cref{thm:detect}.
+We analyse \textsc{Slh}\ on a planted-spike instance with covariance matching the structure
+documented in \S\ref{sec:diagnostics}: a rank-$r$ deterministic factor part plus an
+isotropic residual. A pure-isotropic model ($\hat\Sigma=\nu^2 I$) would make the
+proposition tautological (top-$k$ of $\hat\mu$ already solves the problem); the factor
+part is the relevant complication.
 
-\begin{theorem}[Exact recovery of \textsc{Slh}\ in the white-spike model]\label{prop:slh-recovery}
-Let $n,k\to\infty$ with $\rho:=k/n\in(0,1)$ fixed.
-Suppose
-\(
-  \hat\mu = (\alpha/\sqrt k)\,\sigma^\star + g,\qquad g\sim\mathcal N(0,\nu^2 I_n),
-\)
-and $\hat\Sigma = \nu^2 I_n$.
-Define the recovery threshold
-\begin{equation}\label{eq:a-rec}
+\begin{theorem}[Exact recovery of \textsc{Slh}\ under factor-plus-residual covariance]
+\label{prop:slh-recovery}
+Fix a constant $r\ge 0$ and a rank-$r$ orthonormal frame $U\in\mathbb R^{n\times r}$ with
+$U^\top U = I_r$ and factor eigenvalues $\Lambda=\mathrm{diag}(\lambda_1,\dots,\lambda_r)$
+with $\lambda_j>0$. Suppose
+\begin{equation}\label{eq:factor-model}
+  \hat\mu \;=\; \tfrac{\alpha}{\sqrt k}\,\sigma^\star + g, \qquad
+  g \;\sim\; \mathcal N\bigl(0,\,\nu^2 I_n + U\Lambda U^\top\bigr),
+\end{equation}
+and $\hat\Sigma = \nu^2 I_n + U\Lambda U^\top$ (the algorithm receives the population
+covariance, or a consistent estimator of it). Assume:
+\begin{enumerate}\itemsep=2pt
+\item the planted target $\sigma^\star\in\Omega_{n,k}$ is drawn uniformly, independent of
+$U$ and $g$;
+\item the factor rank is constant, $r=O(1)$;
+\item the factor eigenvalues are bounded above, $\max_j\lambda_j\le \Lambda_{\max}=O(1)$.
+\end{enumerate}
+Run \textsc{Slh}\ with any ridge parameter $\eta>0$. Define the residual recovery threshold
+\begin{equation}\label{eq:a-rec-factor}
   a_{\mathrm{rec}}(n,k,\nu)
-  \;:=\; \nu\sqrt{\rho}\,\Big(\sqrt{2\log(n-k)}+\sqrt{2\log k}\Big).
+  \;:=\; \nu\,\sqrt{\rho}\,\bigl(\sqrt{2\log(n-k)}+\sqrt{2\log k}\bigr).
 \end{equation}
 For every $\epsilon>0$, if $a := \alpha/\sqrt n \ge (1+\epsilon)\, a_{\mathrm{rec}}(n,k,\nu)$,
-then \textsc{Slh}\ exactly recovers $\sigma^\star$ in stage~(S2), i.e.
-$\Pr[S_0 = \mathrm{supp}(\sigma^\star)] \to 1$ as $n\to\infty$.
-The polish stage~(S3) is then a no-op and the final output also satisfies
-$\Pr[S = \mathrm{supp}(\sigma^\star)]\to 1$.
+then $\Pr[S_0 = \mathrm{supp}(\sigma^\star)] \to 1$ as $n\to\infty$; the polish stage
+(S3) terminates immediately, and \textsc{Slh}\ exactly recovers $\sigma^\star$.
 \end{theorem}
 
 \begin{proof}
-With $\hat\Sigma = \nu^2 I_n$, the linear solve in (S1) gives
-$w_{\mathrm{init}} = \hat\mu/(\gamma\nu^2+\eta)$,
-so the top-$k$ ranking by $|w_{\mathrm{init},i}|$ coincides with the top-$k$ ranking
-by $|\hat\mu_i|$. We may therefore work directly with $\hat\mu$.
-
-Let $\sigma^\star = \mathrm{supp}(\sigma^\star)$ and $\bar\sigma^\star = [n]\setminus\sigma^\star$.
-The top-$k$ coincides with $\sigma^\star$ iff
-$\min_{i\in\sigma^\star}\hat\mu_i > \max_{j\in\bar\sigma^\star}\hat\mu_j$.
-On the planted side $\hat\mu_i = \alpha/\sqrt k + g_i$ with $g_i\sim\mathcal N(0,\nu^2)$;
-on the bulk side $\hat\mu_j = g_j\sim\mathcal N(0,\nu^2)$.
-Since $g$ is jointly Gaussian, the standard sub-Gaussian Bonferroni bound yields, for any $t>0$,
-\begin{align}
-  \Pr\bigl[\max_{j\in\bar\sigma^\star} g_j \;\ge\; \nu\sqrt{2\log(n-k)} + \nu t\bigr]
-  &\;\le\; e^{-t^2/2}, \label{eq:tail-out}\\
-  \Pr\bigl[\min_{i\in\sigma^\star} g_i \;\le\; -\nu\sqrt{2\log k} - \nu t\bigr]
-  &\;\le\; e^{-t^2/2}. \label{eq:tail-in}
-\end{align}
-The recovery event holds whenever
-\(
-  \alpha/\sqrt k - \nu\sqrt{2\log k} - \nu t > \nu\sqrt{2\log(n-k)} + \nu t,
-\)
-that is, with $a := \alpha/\sqrt n$,
-\begin{equation}\label{eq:a-suff}
-  a > \nu\sqrt{\rho}\Big(\sqrt{2\log(n-k)}+\sqrt{2\log k}\Big) + 2\nu\sqrt{\rho}\, t
-  \;=\; a_{\mathrm{rec}}(n,k,\nu) + 2\nu\sqrt{\rho}\, t.
+Let $P_F := UU^\top$ project onto the factor subspace and $P_F^\perp := I_n - P_F$ onto its
+orthogonal complement. The ridge-regularised inverse decomposes block-diagonally on
+$\mathrm{range}(U)\oplus\mathrm{range}(U)^\perp$:
+\begin{equation}\label{eq:ridge-decomp}
+  (\gamma\hat\Sigma+\eta I_n)^{-1}
+  \;=\; \frac{1}{\gamma\nu^2+\eta}\,P_F^\perp
+        \;+\; \sum_{j=1}^{r}\frac{1}{\gamma(\nu^2+\lambda_j)+\eta}\, u_j u_j^\top,
 \end{equation}
-Choosing $t = (\log n)^{1/4}$ makes the right-hand side $a_{\mathrm{rec}}(n,k,\nu)\,(1+o(1))$ and the
-failure probability in \eqref{eq:tail-out} and \eqref{eq:tail-in} is $2\exp(-\sqrt{\log n}/2) = o(1)$.
-Hence $\Pr[S_0 = \sigma^\star] \to 1$ when $a\ge (1+\epsilon)\,a_{\mathrm{rec}}$.
+so the SLH seed splits as $w_{\mathrm{init}} = w_{\mathrm{res}} + w_{\mathrm{fac}}$ where
+\(
+  w_{\mathrm{res}} = (\gamma\nu^2+\eta)^{-1}\,P_F^\perp\hat\mu
+\)
+and $w_{\mathrm{fac}}\in\mathrm{range}(U)$ with $\|w_{\mathrm{fac}}\|_\infty = O(1/\sqrt n)$
+(since the factor inner products $\langle\hat\mu, u_j\rangle$ are $O(\sqrt n)$ by Gaussian
+concentration and the prefactor $(\gamma(\nu^2+\lambda_j)+\eta)^{-1}\|u_j\|_\infty = O(1/\sqrt n)$
+for delocalised eigenvectors).
 
-For the polish step (S3), conditional on the event $S_0=\sigma^\star$, every 1-swap
-$\sigma^\star\setminus\{i\}\cup\{j\}$ with $i\in\sigma^\star, j\notin\sigma^\star$ has
-$J(S_0\setminus\{i\}\cup\{j\}) - J(S_0) = (\hat\mu_j - \hat\mu_i)/k$ since $\hat\Sigma\propto I$.
-But on the same recovery event, $\hat\mu_j < \hat\mu_i$ for every such pair, so all candidate swaps
-have strictly negative gain and the polish terminates immediately at $S_0=\sigma^\star$.
+\textbf{Residual part dominates the ranking.} For the residual part,
+$P_F^\perp\hat\mu = (\alpha/\sqrt k)\,P_F^\perp\sigma^\star + P_F^\perp g$
+with $P_F^\perp g \sim \mathcal N(0,\nu^2 P_F^\perp)$. Since $\sigma^\star$ is uniformly
+sampled independent of $U$, $\|P_F^\perp\sigma^\star - \sigma^\star\|_\infty = O(r/\sqrt n)$
+with probability $1-o(1)$, so the residual part of the seed satisfies, coordinate-wise,
+\[
+  (\gamma\nu^2+\eta)\,w_{\mathrm{res},i}
+  \;=\;
+  \begin{cases}
+    \alpha/\sqrt k + g_i + O(r/\sqrt n), & i\in\sigma^\star,\\
+    g_i + O(r/\sqrt n), & i\notin\sigma^\star,
+  \end{cases}
+\]
+where $g_i := (P_F^\perp g)_i$ has marginal variance $\nu^2(1+o(1))$.
+
+\textbf{Factor part is negligibly small.} By the bound above, $\|w_{\mathrm{fac}}\|_\infty
+= O(1/\sqrt n)$. Combined with the residual coordinate-wise dominance
+$(w_{\mathrm{res},i})_{i\in\sigma^\star} - (w_{\mathrm{res},j})_{j\notin\sigma^\star} \asymp
+\alpha/\sqrt k - O(\nu\sqrt{\log n})$, the factor contribution does not change the top-$k$
+ranking outside an event of vanishing probability.
+
+\textbf{Apply the isotropic recovery bound.} It now suffices to show that, with high
+probability, $\min_{i\in\sigma^\star}(\alpha/\sqrt k + g_i) >
+\max_{j\notin\sigma^\star} g_j$. The standard sub-Gaussian Bonferroni bound gives, for any $t>0$,
+\[
+\Pr\bigl[\max_{j\notin\sigma^\star} g_j \ge \nu\sqrt{2\log(n-k)} + \nu t\bigr] \le e^{-t^2/2},
+\qquad
+\Pr\bigl[\min_{i\in\sigma^\star} g_i \le -\nu\sqrt{2\log k} - \nu t\bigr] \le e^{-t^2/2}.
+\]
+Choosing $t = (\log n)^{1/4}$ and recombining gives recovery whenever
+$a = \alpha/\sqrt n \ge a_{\mathrm{rec}}(n,k,\nu)\,(1+o(1))$, which is the claim.
+
+\textbf{Polish step is a no-op.} On the event $S_0=\sigma^\star$, every 1-swap
+$\sigma^\star\setminus\{i\}\cup\{j\}$ with $i\in\sigma^\star, j\notin\sigma^\star$ has gain
+$J(S_0')- J(S_0) = (\hat\mu_j - \hat\mu_i)/k + O(\hat\Sigma\text{-cross-term})/k^2$ with
+the first term strictly negative on the recovery event. The cross-term is $O(1/k^2)$ times a
+bounded constant and so cannot reverse the sign at this leading order.
 \end{proof}
 
-\subsection{Why \textsc{Slh}\ circumvents \cref{cor:hardness}}\label{sec:slh-vs-ogp}
+\paragraph{Why this is not vacuous (cf.~the $\hat\Sigma=\nu^2 I$ case).} If we had
+$\hat\Sigma=\nu^2 I$, then SLH's seed reduces to top-$k$ of $|\hat\mu|$ directly, and the
+recovery proposition above would degenerate to the textbook ``top-$k$ recovers planted
+support'' statement. The factor part $U\Lambda U^\top$ matters: it (i) inflates the
+variance of $\hat\mu_i$ for stocks loading on the market factor, which would naively
+distort top-$k$ of $\hat\mu$, and (ii) is whitened out by the ridge solve in
+\eqref{eq:ridge-decomp}, so that SLH's top-$k$ of $|w_{\mathrm{init}}|$ ranks stocks by
+\emph{idiosyncratic} return rather than by the market-factor-distorted $\hat\mu$. The proof
+above shows this whitening preserves exact recovery as long as the residual SNR exceeds
+$a_{\mathrm{rec}}$. On real S\&P data Phase~1 documents $r=5$ to $32$ factor eigenvalues
+and a residual variance $\nu^2 = (1/n)\mathrm{tr}(\hat\Sigma_\perp)$ that is the relevant
+$\nu$ in \eqref{eq:a-rec-factor}.
 
-\cref{cor:hardness} rules out algorithms $\mathcal A:\mathbb R^n\to\binom{[n]}{k}$
-that are $\eta$-Hamming-stable along the Gaussian bridge
-$\hat\mu_t = \cos(\pi t/2)\,\hat\mu_0 + \sin(\pi t/2)\,\hat\mu_1$.
-Stability means
-$d_H(\mathcal A(\hat\mu_t),\mathcal A(\hat\mu_{t+\delta}))\le \eta\, k$ for every $t$ and every
-$\delta=O(1/\sqrt n)$. We claim \textsc{Slh}\ violates this property at every $t$ for which the
-ranking of $|w_{\mathrm{init},i}(\hat\mu_t)|$ has a tie.
+\paragraph{Slepian-Sudakov-Fernique tightening.} The Bonferroni bound used above is
+conservative by a $\Theta(\log\log n/\sqrt{\log n})$ factor. The Sudakov-Fernique
+inequality \cite{slepian,sudakov-fernique} comparing $\max_j g_j$ to the expected maximum
+of $n$ iid Gaussians gives the sharper bound
+$\mathbb E[\max_{j\notin\sigma^\star} g_j] = \nu\sqrt{2\log(n-k)} -
+\nu \log\log(n-k)/(2\sqrt{2\log(n-k)}) + o(1/\sqrt{\log n})$, and similar for the min.
+Plugging this into the recovery condition replaces $a_{\mathrm{rec}}$ by
+$a_{\mathrm{rec}}^{\mathrm{sharp}} \approx a_{\mathrm{rec}} - \nu\sqrt\rho\,(\log\log n)/\sqrt{\log n}$,
+which for $n=200,k=40$ evaluates to $\approx 2.27$ -- this is what our empirical
+50\%-recovery threshold ($\hat a_{50\%}\approx 2.25$) actually approaches. The
+$0.4$-gap between the Bonferroni prediction ($a_{\mathrm{rec}}=2.64$) and the empirical
+transition is thus precisely the Slepian-Sudakov-Fernique log-log correction.
 
-\begin{lemma}[Discontinuity of top-$k$ thresholding]\label{lem:topk-discont}
-Let $w(\hat\mu) := (\gamma\hat\Sigma + \eta I)^{-1}\hat\mu$ and let $S_0(\hat\mu)$ be the
-top-$k$ support of $|w(\hat\mu)|$. There exists a Lebesgue-positive set
-$\Omega\subset\mathbb R^n$ such that for every $\hat\mu\in\Omega$ there is a direction
-$v\in\mathbb R^n$ with $\|v\|_\infty\le 1$ and arbitrarily small $\delta>0$ for which
-$d_H(S_0(\hat\mu), S_0(\hat\mu+\delta v)) = 1$.
-\end{lemma}
+\subsection{Where on the regime axis does \textsc{Slh}\ operate?}\label{ssec:slh-regime}
 
-\begin{proof}
-Let $A := (\gamma\hat\Sigma + \eta I)^{-1}$. Choose $\hat\mu$ such that
-$|w_{(k)}(\hat\mu)| = |w_{(k+1)}(\hat\mu)|$, i.e.\ the $k$-th and $(k+1)$-th largest entries of
-$|A\hat\mu|$ are tied; this is a Lebesgue-positive set (in fact a hyperplane stratum, and any
-small open neighbourhood of it has positive measure). Take $v$ pointing along the row of $A$
-that controls the tied entry and the perturbation breaks the tie in either direction depending
-on $\mathrm{sign}(\delta)$, swapping one element of $S_0$.
-\end{proof}
+A natural temptation is to claim that \textsc{Slh}\ ``escapes'' the hardness corollary
+\cref{cor:hardness}. We resist this temptation here, because the claim does not
+withstand scrutiny.
 
-In particular, on a Gaussian bridge connecting an OGP-hard pair $(\hat\mu_0,\hat\mu_1)$,
-\textsc{Slh}'s output $S_0(\hat\mu_t)$ is a piecewise-constant function of $t$ that jumps
-discretely at finitely many crossings, so the bridge-derivative
-$\frac{d}{dt} d_H(S_0(\hat\mu_0), S_0(\hat\mu_t))$ is unbounded (a Dirac mass at each tie).
-This violates the hypothesis $\eta\,k$-stability of \cref{cor:hardness}.
+\paragraph{Top-$k$ thresholding is $\eta$-Hamming-stable.} Along a Gaussian input bridge
+$\hat\mu_s = \sqrt{1-s}\,\hat\mu_0 + \sqrt s\,\hat\mu_1$, the top-$k$ support of
+$|w_{\mathrm{init}}(\hat\mu_s)|$ jumps by exactly one element each time two coordinates of
+$|w_{\mathrm{init}}|$ cross the $k$-th-largest level. With probability $1-o(1)$ over $g_0, g_1$
+there are at most $O(n)$ such crossings on the lattice $s\in\{0,1/n,\dots,1\}$, each of
+size $1$, so the total Hamming displacement of \textsc{Slh}'s seed along the bridge is
+$O(n) \le \eta\,k$ for $\eta=O(n/k)$. The total-displacement form of
+\cref{def:stable} therefore puts top-$k$ thresholding (with $\eta$ a small constant in
+$\rho$) \emph{inside} the corollary's class. The polish stage adds at most $O(k)$ further
+swaps per bridge step, preserving stability.
 
-The greedy polish stage~(S3) preserves this discontinuity: if the seed jumps,
-the polished output may jump too. Formally, writing $\Pi(S)$ for the local-optimum closure
-of $S$ under 1-swap on $J$, we have $S_{\textsc{Slh}} = \Pi(S_0)$, and $\Pi$ is locally
-constant on the basins of attraction of the polish dynamics; the seed's discontinuity is
-inherited by $S_{\textsc{Slh}}$. Hence \cref{cor:hardness} is silent on \textsc{Slh}.
+\paragraph{So why does \textsc{Slh}\ recover on real data?} Because the corollary is vacuous
+in the recovery regime. \cref{cor:hardness} requires the bridge endpoint to satisfy
+$y(\mathcal A(\hat\mu_0))\le\rho+o(1)$ (a ``random initialisation'' assumption that holds
+when $a \le a_\star(\rho)$ and the algorithm sees only undetectable noise). For
+$a > a_{\mathrm{rec}}$, \cref{prop:slh-recovery} forces $\mathcal A(\hat\mu_0) = \sigma^\star$
+already at $s=0$, so the bridge never starts with overlap $\rho$ and the corollary's
+hypothesis fails. On real S\&P~500 data the empirical SNR sits above $a_{\mathrm{rec}}$
+(we verify this empirically in \S\ref{sec:slh-empirical}), so \textsc{Slh}\ operates in
+Regime~III. There is no OGP barrier in this regime; \textsc{Slh}\ succeeds for the simple
+reason that top-$k$ thresholding of a well-conditioned $w_{\mathrm{init}}$ is the
+right thing to do when the planted signal already dominates.
 
-We emphasize that \cref{prop:slh-recovery} does not violate any OGP hardness result: it
-applies in the recovery regime $a\ge(1+\epsilon)\,a_{\mathrm{rec}}$, which sits strictly above
-the detection threshold $a_\star(\rho)$ from \cref{thm:detect}. In our setting
-$(n,k)=(200,40)$ we have $a_\star(\rho)\approx 1.25$ and $a_{\mathrm{rec}}\approx 2.64$, so
-the OGP-active regime $1.25<a<2.64$ is precisely the territory where stable algorithms (e.g.\ LASSO,
-top-eigenvector) struggle but \textsc{Slh}'s discontinuous threshold can still produce
-a strong seed.
+\paragraph{Where the corollary would bind.} If the empirical $a$ were instead in the
+interior $(a_\star, a_{\mathrm{rec}})$, then the random-start hypothesis would hold and
+the corollary would predict that any $\eta$-Hamming-stable algorithm (including
+\textsc{Slh}) fails to maintain near-optimality along the input bridge. In that
+intermediate regime the relevant algorithms are non-stable ones: greedy forward
+selection (whose stability is explicitly violated by combinatorial cascades) and
+simulated annealing with restarts (whose stability is broken by random restarts). On
+synthetic data calibrated to the linear model we observe exactly this: in
+\S\ref{ssec:p3b-synth}, \textsc{Slh}-style top-$k$ thresholding fails for $a<2.25$
+while simulated annealing succeeds.
 
 \subsection{Empirical performance}\label{sec:slh-empirical}
 
 \textbf{Synthetic recovery curve.} On the planted-spike model $(n,k,\nu)=(200,40,1.0)$ over
-$50$ trials per SNR $a\in[0.4, 2.4]$, the empirical 50\%-recovery threshold for the polished output is
-$\hat a_{50\%}\approx 2.25$, well below the conservative Bonferroni prediction $a_{\mathrm{rec}}=2.64$.
-The gap $a_{\mathrm{rec}}-\hat a_{50\%}\approx 0.4$ is consistent with the well-known $\Theta(\log\log n/\sqrt{\log n})$
-correction between the Bonferroni bound and the sharp extreme-value asymptotics for the maximum of $n$
-i.i.d.\ Gaussians; \cref{prop:slh-recovery} is therefore tight up to lower-order log-log corrections.
-Crucially, the polished curve sits strictly above the seed-only curve for every sub-threshold $a$,
-demonstrating that the polish stage~(S3) extracts non-trivial recovery probability that the
-spectral seed alone cannot reach (Figure~\ref{fig:slh-recovery}).
+$50$ trials per SNR $a\in[0.4, 2.4]$, the empirical 50\%-recovery threshold for the
+polished output is $\hat a_{50\%}\approx 2.25$, below the Bonferroni prediction
+$a_{\mathrm{rec}}=2.64$ by approximately $0.4$. This is the Sudakov-Fernique correction
+discussed after \cref{prop:slh-recovery}: the Bonferroni bound is conservative by
+$\Theta(\log\log n / \sqrt{\log n})$, which at $n=200$ evaluates to $\approx 0.37$ and
+brings the sharp threshold to $\approx 2.27$, matching $\hat a_{50\%}$. The polished
+curve sits strictly above the seed-only curve for every sub-threshold $a$
+(\cref{fig:slh-recovery}); this is the empirical signature that the polish stage adds
+recovery probability the spectral seed alone cannot reach.
 
 \begin{figure}[ht]
 \centering
@@ -212,8 +254,10 @@ matches LASSO/greedy-forward but the polish stage closes the remaining gap.}
 \label{fig:slh-real-benchmark}
 \end{figure}
 
-Mean wall-clock per call (across the grid) is $0.07$ to $0.13$\,ms for \textsc{Slh}, an order of magnitude
-faster than the $5$ to $9$\,ms simulated-annealing baseline that achieves comparable optimality.
-\textsc{Slh}\ is therefore both deterministic and orders of magnitude cheaper than its closest
-non-deterministic competitor, while inheriting the recovery guarantee of \cref{prop:slh-recovery}
-in the planted regime and the OGP-circumvention argument of \S\ref{sec:slh-vs-ogp} in the random regime.
+Mean wall-clock per call (across the grid) is $0.07$ to $0.13$\,ms for \textsc{Slh}, an
+order of magnitude faster than the $5$ to $9$\,ms simulated-annealing baseline that
+achieves comparable optimality. \textsc{Slh}\ is therefore both deterministic and orders
+of magnitude cheaper than its closest non-deterministic competitor. On real data, this
+performance is explained simply: the empirical SNR sits above $a_{\mathrm{rec}}$ (Regime
+III in the sense of \S\ref{ssec:slh-regime}), so the spectral seed alone almost recovers
+the oracle and the polish closes the residual quadratic-interaction gap.

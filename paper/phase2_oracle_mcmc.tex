@@ -40,7 +40,7 @@ practice and connected to course concepts:
   \item \emph{Greedy forward selection.} Start from $S=\emptyset$ and at each step add the
         single asset that maximises $J(S\cup\{j\})$ until $|S|=k$.
   \item \emph{LASSO-Markowitz.} Solve the unconstrained $\ell_1$-regularised mean-variance
-        program
+        program (in the style of Tibshirani's LASSO \cite{tibshirani-lasso})
         \[
           \hat w_\lambda \;=\; \arg\min_{w\in\mathbb R^n}\; \tfrac{\gamma}{2}\, w^\top\hat\Sigma w - \hat\mu^\top w
           + \lambda\,\|w\|_1,
@@ -111,7 +111,7 @@ The Boltzmann measure on the slice
 \)
 is the natural object linking the empirical optimisation problem to the OGP machinery. We
 implement a \emph{constrained Metropolis} chain on $\Omega_{n,k}$, viewed as a discrete-time
-martingale-difference dynamics in the energy variable $J(\sigma_t)$ \cite{lec:mg}, with swap proposals
+martingale-difference dynamics in the energy variable $J(\sigma_t)$ \cite{vershynin}, with swap proposals
 (remove one $i\in S$, add one $j\notin S$) and Metropolis acceptance
 $\min\{1,\exp(\beta(J(S')-J(S)))\}$. With cached row-sums
 $s_v := \sum_{j\in S}\hat\Sigma_{v,j}$, each swap evaluates in $O(1)$ amortised time

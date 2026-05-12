@@ -25,14 +25,14 @@ combinatorial problem. We characterise all three on the train block.
 For each stock $i$ we estimate the Orlicz norms
 $\|R_{:,i}\|_{\psi_2} := \inf\{c>0: \mathbb E[\exp(R_{:,i}^2/c^2)]\le 2\}$ and
 $\|R_{:,i}\|_{\psi_1} := \inf\{c>0: \mathbb E[\exp(|R_{:,i}|/c)]\le 2\}$ via the standard
-empirical-moment estimator on standardised returns \cite{lec:subexp}. Both norms are \emph{finite for every
+empirical-moment estimator on standardised returns \cite[Ch.~2]{vershynin} (see also \cite[Ch.~2]{wainwright}). Both norms are \emph{finite for every
 stock} (i.e., the empirical moment-generating function exists at the canonical scale on
 all $i$): we obtain median $\|\cdot\|_{\psi_2}=3.63$ vs.\ Gaussian reference $1.63$, and
 median $\|\cdot\|_{\psi_1}=1.66$ vs.\ Laplace reference $1.44$.
 
 \noindent\emph{Implication.} The data are sub-Gaussian but with $\psi_2$ inflated by a
 factor of roughly $2\times$ over the Gaussian benchmark. This puts us squarely in the
-Bernstein regime \cite{lec:concentration}: any concentration argument we deploy (e.g., for max-norm of $\hat\mu$ or
+Bernstein regime \cite[Ch.~2.8]{vershynin}: any concentration argument we deploy (e.g., for max-norm of $\hat\mu$ or
 for entrywise covariance bounds) carries an effective variance proxy
 $\hat\nu^2 \approx (3.63/1.63)^2 \cdot \nu_{\mathrm{Gaussian}}^2 \approx 5\,\nu_{\mathrm{Gaussian}}^2$.
 We will use $\hat\nu$ to instantiate the recovery threshold of
@@ -53,7 +53,7 @@ Theorem~\ref{prop:slh-recovery} on real data.
 
 \subsection{Spectral structure of $\hat\Sigma$}\label{ssec:spectrum}
 
-For the empirical covariance with $n/T=0.186$ the Marchenko-Pastur edges \cite{lec:rmt} (under iid
+For the empirical covariance with $n/T=0.186$ the Marchenko-Pastur edges \cite{marchenko-pastur} (under iid
 isotropic returns of unit variance, rescaled to the empirical trace) are
 $\lambda_\pm = (1\pm\sqrt{n/T})^2 = (1\pm 0.4316)^2$ scaled by
 $\bar\sigma^2 := \tfrac1n\,\mathrm{tr}(\hat\Sigma)$. Concretely
@@ -92,29 +92,31 @@ $\eta\, I$ term tames the bulk.
 
 \subsection{Failure of the Restricted Isometry Property}\label{ssec:rip}
 
-For the LASSO-Markowitz baseline (\S\ref{sec:lasso}) to provably recover the true sparse
-support one wants $\hat\Sigma$ to satisfy a Restricted Isometry Property (RIP) \cite{lec:cs}. The
-standard $k$-RIP constant is
+For LASSO-Markowitz (\S\ref{sec:lasso}) to recover a $k$-sparse support, Cand\`es and Tao's
+condition \cite{candes-tao-rip} requires $\delta_{2k}(\hat\Sigma) < \sqrt 2 - 1\approx 0.414$,
+where
 \[
-  \delta_k(\hat\Sigma) \;:=\; \sup_{|S|\le k}\,\big|\lambda_{\max}(\hat\Sigma_{S,S}) - 1\big| \;\vee\;
-                              \big|\lambda_{\min}(\hat\Sigma_{S,S}) - 1\big|,
+  \delta_s(\hat\Sigma) \;:=\; \sup_{|S|\le s}\,\big|\lambda_{\max}(\hat\Sigma_{S,S}) - 1\big| \;\vee\;
+                              \big|\lambda_{\min}(\hat\Sigma_{S,S}) - 1\big|
 \]
-after re-scaling so that $\mathrm{diag}(\hat\Sigma) = 1$. Sample-splitting and Monte-Carlo
-estimation over $10^4$ random $k$-subsets gives the following $95$-th-percentile values
-of $\delta_k$:
+after re-scaling so that $\mathrm{diag}(\hat\Sigma) = 1$. We measure $\delta_k$ over $10^4$
+random $k$-subsets (a cheaper Monte-Carlo estimate); since the supremum over $k$-subsets
+is bounded by the supremum over $2k$-subsets, $\delta_k \le \delta_{2k}$ deterministically, so
+any lower bound on $\delta_k$ certifies the same lower bound on $\delta_{2k}$.
+The $95$-th-percentile values are
 \[
   \delta_5 \approx 0.846,\qquad \delta_{10} \approx 0.867,\qquad \delta_{20} \approx 1.045,
-  \qquad \delta_{50}\approx 0.853.
+  \qquad \delta_{50}\approx 0.853,
 \]
-LASSO's exact-recovery analysis requires $\delta_{2k}<\sqrt 2 - 1\approx 0.414$;
-here $\delta_k$ already exceeds $1/3$ at the $95$-th percentile for every $k$.
-\emph{RIP fails uniformly}, and we therefore expect LASSO-Markowitz to be a poor
-recovery algorithm on this dataset, a prediction that Phase~2a confirms quantitatively.
+each far exceeding $\sqrt 2 - 1$. Hence $\delta_{2k}\ge \delta_k > \sqrt 2 - 1$ at the
+$95$-th percentile for every $k$ we test, certifying that the Cand\`es-Tao recovery
+condition fails uniformly. We therefore expect LASSO-Markowitz to be a poor recovery
+algorithm on this dataset, a prediction that Phase~2a confirms quantitatively.
 
 \begin{figure}[ht]
 \centering
 \includegraphics[width=0.7\textwidth]{figs/rip_probe.png}
-\caption{Empirical RIP probe. For each $k\in\{5,10,20,50\}$ we evaluate $\delta_k$ on $10^4$ random subsets and show the median, $95$-th percentile, and maximum. The dashed line is the LASSO recovery threshold $\sqrt 2 - 1$. The $95$-th percentile exceeds the threshold for every $k$, so LASSO-Markowitz cannot be expected to recover the combinatorial optimum.}\label{fig:rip}
+\caption{Empirical RIP probe. For each $k\in\{5,10,20,50\}$ we evaluate $\delta_k$ on $10^4$ random subsets and show the median, $95$-th percentile, and maximum. Since $\delta_{2k}\ge\delta_k$ deterministically, any lower bound on $\delta_k$ is also a lower bound on $\delta_{2k}$. The dashed line is the Cand\`es-Tao threshold $\sqrt 2 - 1\approx 0.414$ that $\delta_{2k}$ must satisfy. The $95$-th percentile of $\delta_k$ exceeds the threshold for every $k$, certifying that $\delta_{2k}$ fails the condition; LASSO-Markowitz cannot be expected to recover the combinatorial optimum.}\label{fig:rip}
 \end{figure}
 
 \paragraph{Summary of Phase 1.} The S\&P data is sub-Gaussian (Bernstein-applicable);
