@@ -1,0 +1,215 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,mathrsfs}
+\usepackage{graphicx}
+\usepackage{subcaption}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{cleveref}
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{definition}[theorem]{Definition}
+
+\title{Cardinality-Constrained Portfolio Optimization \\
+  via the Overlap Gap Property: \\
+  An Application of Discrete Probability and Stochastic Processes}
+\author{Auritro Dutta, Aleksandr Marteev, Aviral Aggarwal, Alan Berdikulov \\
+  MIT 6.7720 / 15.070 / 18.619, Discrete Probability and Stochastic Processes}
+\date{Spring 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We study cardinality-constrained portfolio selection on $n=468$ S\&P~500 constituents
+over a 10-year window ($T=2{,}512$ trading days). The empirical version of the problem
+has two faces. In-sample, it is computationally easy: a deterministic spectral seed
+followed by a 1-swap polish (\textsc{Slh}) matches the brute-force oracle on every
+$(n,k)$ cell within reach of enumeration, at roughly $0.1$\,ms per call. Out-of-sample,
+the same oracle's annualised Sharpe collapses by $30$--$50\%$, and so do the Sharpes of
+greedy, simulated annealing, and \textsc{Slh}, since all three recover the same support.
+What limits performance on held-out data is the noise in $\hat\mu$ and $\hat\Sigma$, not
+the difficulty of optimising over them.
+
+For the planted linear score $H(\sigma)=\hat\mu^\top\sigma$ we prove a first-moment
+detection upper bound $a_\star(\rho)= (1-\rho)^{-1}\sqrt{2 h(\rho)}$
+(\cref{thm:detect}) and a single-sided forbidden-overlap interval
+(\cref{thm:forbid}), both verified by constrained Metropolis. For the full quadratic
+objective $J(\sigma)=\tfrac{1}{k}\hat\mu^\top\sigma-\tfrac{\gamma}{2k^2}\sigma^\top
+\hat\Sigma\sigma$, a sharp mixing-time blow-up of constrained Metropolis between
+$(n,k)=(20,5)$ and $(40,10)$ supplies empirical evidence for a classical interior OGP;
+a rigorous proof remains open.
+\end{abstract}
+
+\section{Introduction}\label{sec:intro}
+
+\paragraph{The problem.} Given $n$ stocks with daily returns $R\in\mathbb R^{T\times n}$,
+sample mean $\hat\mu = \tfrac1T R^\top\mathbf 1$ and sample covariance $\hat\Sigma$, fix a
+target portfolio size $k$ and risk-aversion $\gamma>0$. Following Markowitz \cite{markowitz},
+the cardinality-constrained mean-variance problem is
+\begin{equation}\label{eq:problem-intro}
+  \sigma^\star \;=\; \arg\max_{\sigma\in\Omega_{n,k}} J(\sigma),
+  \qquad J(\sigma) := \frac{1}{k}\,\hat\mu^\top\sigma - \frac{\gamma}{2k^2}\sigma^\top\hat\Sigma\sigma,
+\end{equation}
+with $\Omega_{n,k}=\{\sigma\in\{0,1\}^n:\sum_i\sigma_i=k\}$. The feasible set has size
+$\binom{n}{k}$; brute force gives out past $\sim\!10^7$, e.g.\ $\binom{50}{10}\approx 10^{10}$.
+
+\paragraph{Two questions.} The paper organises itself around two questions:
+\begin{enumerate}\itemsep=2pt
+\item \textbf{In-sample}: how hard is~\eqref{eq:problem-intro} on a given empirical
+$(\hat\mu,\hat\Sigma)$? A discrete optimisation problem on a specific noisy input.
+\item \textbf{Out-of-sample}: does solving (1) buy a portfolio that performs on
+held-out data? A generalisation problem.
+\end{enumerate}
+The two answers go in opposite directions. On real S\&P~500 data
+the in-sample problem is solved deterministically in $0.1$\,ms per call,
+matching the brute-force oracle. Yet the oracle itself loses $30$--$50\%$ of its
+training Sharpe out-of-sample. Whatever costs there are sit in the moments
+$(\hat\mu,\hat\Sigma)$, not in the optimisation over them.
+
+\paragraph{Why discrete probability?} The interaction between sample noise in
+$(\hat\mu,\hat\Sigma)$ and the combinatorial structure of $\Omega_{n,k}$ is exactly what
+the probabilistic-combinatorics toolkit was built for. Three ingredients enter:
+concentration for $\hat\mu,\hat\Sigma$, which controls in-sample rankings; the spectrum
+of $\hat\Sigma$ via random-matrix theory, which determines when a convex relaxation can
+match the combinatorial optimum; and the Overlap Gap Property
+(OGP), which gives a geometric theory of when
+planted recovery is blocked for whole classes of algorithms.
+
+\paragraph{What is proved, and what is conjectured.} We work in a planted-spike model
+$\hat\mu = (\alpha/\sqrt k)\sigma^\star + g$ tailored to the factor-plus-residual
+structure documented in~\S\ref{sec:diagnostics}. For the linear score
+$H(\sigma)=\hat\mu^\top\sigma$ we prove a detection upper bound
+(\cref{thm:detect}) and a single-sided forbidden-overlap interval (\cref{thm:forbid}).
+On this linearised model the optimisation is trivially solved by top-$k$ thresholding
+once $a>a_{\mathrm{rec}}$; the theorems are interesting not because they describe how
+to optimise but because they pin down the information-theoretic boundary between random
+and planted instances. For the quadratic objective $J$ in \eqref{eq:problem-intro}, the
+classical interior-OGP shape remains conjectural here;
+our empirical handle is the mixing time of constrained Metropolis, which blows up
+sharply between $(n,k)=(20,5)$ and $(40,10)$ (\S\ref{ssec:p2b}).
+
+\paragraph{Roadmap.}\S\ref{sec:diagnostics} characterises the empirical regime
+(sub-Gaussian tails, factor-spike covariance, RIP failure). \S\ref{sec:oracle} sets up
+the brute-force oracle, four polynomial-time baselines, and the constrained-Metropolis
+sampler whose mixing-time blow-up provides the empirical OGP signal.
+\S\ref{sec:ogp} proves the linear-model theorems and derives a hardness statement for
+algorithms whose iterates are Hamming-stable along an input bridge.
+\S\ref{sec:ogp-empirical} verifies the theorems on synthetic data and shows that the
+analogous overlap distribution on real $(30,6)$ instances remains smooth.
+\S\ref{sec:slh} introduces our hybrid algorithm \textsc{Slh}\ and gives an
+exact-recovery proposition under factor-plus-residual covariance.
+\S\ref{sec:conclusion} returns to the two questions opened above.
+
+% Phase 1: empirical diagnostics
+\input{phase1_diagnostics.tex}
+
+% Phase 2: oracle, baselines, MCMC
+\input{phase2_oracle_mcmc.tex}
+
+% Phase 3a: OGP theory
+\input{phase3a_ogp.tex}
+
+% Phase 3b: empirical OGP experiment
+\input{phase3b_empirical.tex}
+
+% Phase 4a: SLH algorithm
+\input{phase4_hybrid.tex}
+
+% Conclusion / discussion
+\input{conclusion.tex}
+
+\bibliographystyle{plain}
+\begin{thebibliography}{99}
+
+\bibitem{markowitz}
+H.~Markowitz,
+\newblock Portfolio selection,
+\newblock {\em Journal of Finance}, 7(1):77-91, 1952.
+
+\bibitem{cramer-original}
+H.~Cram\'er,
+\newblock Sur un nouveau th\'eor\`eme-limite de la th\'eorie des probabilit\'es,
+\newblock {\em Actualit\'es Scientifiques et Industrielles}, 736:5-23, 1938.
+
+\bibitem{vershynin}
+R.~Vershynin,
+\newblock {\em High-Dimensional Probability: An Introduction with Applications in Data Science},
+\newblock Cambridge University Press, 2018.
+
+\bibitem{wainwright}
+M.~J.~Wainwright,
+\newblock {\em High-Dimensional Statistics: A Non-Asymptotic Viewpoint},
+\newblock Cambridge University Press, 2019.
+
+\bibitem{candes-tao-rip}
+E.~J.~Cand\`es and T.~Tao,
+\newblock Decoding by linear programming,
+\newblock {\em IEEE Trans.\ Inform.\ Theory}, 51(12):4203-4215, 2005.
+
+\bibitem{marchenko-pastur}
+V.~A.~Marchenko and L.~A.~Pastur,
+\newblock Distribution of eigenvalues for some sets of random matrices,
+\newblock {\em Mat.\ Sb.}, 72(4):507-536, 1967.
+
+\bibitem{slepian}
+D.~Slepian,
+\newblock The one-sided barrier problem for Gaussian noise,
+\newblock {\em Bell System Tech.\ J.}, 41(2):463-501, 1962.
+
+\bibitem{sudakov-fernique}
+X.~Fernique,
+\newblock Regularit\'e des trajectoires des fonctions al\'eatoires gaussiennes,
+\newblock {\em \'Ecole d'\'Et\'e de Probabilit\'es de Saint-Flour IV-1974}, LNM 480:1-96, 1975.
+
+\bibitem{lindeberg}
+J.~W.~Lindeberg,
+\newblock Eine neue Herleitung des Exponentialgesetzes in der Wahrscheinlichkeitsrechnung,
+\newblock {\em Mathematische Zeitschrift}, 15(1):211-225, 1922.
+
+\bibitem{talagrand-concentration}
+M.~Talagrand,
+\newblock Concentration of measure and isoperimetric inequalities in product spaces,
+\newblock {\em Publ.\ Math.\ IH\'ES}, 81:73-205, 1995.
+
+\bibitem{janson}
+S.~Janson,
+\newblock Poisson approximation for large deviations,
+\newblock {\em Random Structures \& Algorithms}, 1(2):221-229, 1990.
+
+\bibitem{sherrington-kirkpatrick}
+D.~Sherrington and S.~Kirkpatrick,
+\newblock Solvable model of a spin-glass,
+\newblock {\em Physical Review Letters}, 35(26):1792-1796, 1975.
+
+\bibitem{ben-arous-wein}
+G.~Ben~Arous and A.~S.~Wein,
+\newblock Free energy wells and overlap gap property in sparse PCA,
+\newblock {\em Proc.\ Conference on Learning Theory (COLT)}, pp.~479-482, 2020.
+
+\bibitem{tibshirani-lasso}
+R.~Tibshirani,
+\newblock Regression shrinkage and selection via the lasso,
+\newblock {\em J.~R.~Stat.\ Soc.\ B}, 58(1):267-288, 1996.
+
+\bibitem{ledoit-wolf}
+O.~Ledoit and M.~Wolf,
+\newblock A well-conditioned estimator for large-dimensional covariance matrices,
+\newblock {\em Journal of Multivariate Analysis}, 88(2):365-411, 2004.
+
+\bibitem{lo-sharpe}
+A.~W.~Lo,
+\newblock The statistics of Sharpe ratios,
+\newblock {\em Financial Analysts Journal}, 58(4):36-52, 2002.
+
+\bibitem{demiguel-garlappi-uppal}
+V.~DeMiguel, L.~Garlappi, and R.~Uppal,
+\newblock Optimal versus naive diversification: how inefficient is the $1/N$ portfolio strategy?,
+\newblock {\em Review of Financial Studies}, 22(5):1915-1953, 2009.
+
+\end{thebibliography}
+
+\end{document}

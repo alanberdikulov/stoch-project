@@ -1,0 +1,531 @@
+% Phase 3a: Theoretical analysis: detection threshold and forbidden-overlap interval
+% Self-contained section, designed to be \input into the main writeup.
+
+\section{Theory: detection threshold and forbidden-overlap interval}
+\label{sec:ogp}
+
+This section contains the project's main rigorous contribution: two theorems on the
+linear planted-spike score $H(\sigma)=\hat\mu^\top\sigma$, together with an algorithmic
+hardness corollary for Hamming-stable algorithms.
+
+\paragraph{The linear score, and what the theorems control.}
+For $H(\sigma) = \hat\mu^\top \sigma$ the global maximiser is trivially
+$\arg\mathrm{top}_k(\hat\mu)$, so a theorem about $\arg\max H$ is uninteresting on its
+own. The interesting objects are the near-optimal level sets
+$A_T := \{\sigma \in \Omega_{n,k} : H(\sigma) \ge T\}$. Any algorithm with restricted
+access to $\hat\mu$ (in particular any sampler driven by the Gibbs measure
+$\pi_\beta \propto e^{\beta H}$ at finite $\beta$, and any algorithm whose iterates are
+stable under input perturbations) sees the level sets rather than the argmax.
+Theorem~\ref{thm:detect} bounds the SNR above which the planted point dominates these
+level sets in a neighbourhood of the random-overlap baseline $y = \rho$;
+Theorem~\ref{thm:forbid} extends the neighbourhood to an explicit interval
+$[\rho, y_a(\rho)]$ on which the level sets are essentially empty. The latter is the
+geometric object that obstructs Hamming-stable dynamics, whether or not the global
+optimum is reachable directly.
+
+\paragraph{The quadratic $J$.}
+The full objective $J(\sigma) = \tfrac{1}{k}\hat\mu^\top\sigma -
+\tfrac{\gamma}{2k^2}\sigma^\top\hat\Sigma\sigma$ contains a spin-glass--type
+quadratic coupling between subsets that the linear model does not capture. A classical
+interior OGP for $J$ is conjecturally what
+drives the mixing-time blow-up seen in \S\ref{ssec:p2b} at $(n,k) = (40,10)$. The
+required proof---a Sherrington--Kirkpatrick--type second-moment computation under
+factor-plus-residual covariance~\cite{sherrington-kirkpatrick}---we do not carry out;
+see \S\ref{sec:ogp-empirical} for the precise conjecture.
+
+\paragraph{The hardness corollary, and what it excludes.}
+Corollary~\ref{cor:hardness} rules out a specific class of algorithms: those whose
+support is $\eta$-Hamming-stable along a Gaussian input bridge with
+$\eta < k(y_a - \rho)/2$. As discussed in~\S\ref{ssec:cor-scope}, LASSO-Markowitz and
+top-eigenvector projection sit in this class; greedy forward selection and constrained
+Metropolis do not. The corollary is not the reason \textsc{Slh}\ succeeds on real S\&P
+data: by~\S\ref{sec:slh-regime}, the empirical SNR sits in Regime~I
+(\S\ref{sec:regimes}), well below the recovery threshold $a_{\mathrm{rec}}$, so the
+corollary's premise is not the operative regime for real data. The corollary is
+therefore an asymptotic-regime statement, not a real-data claim.
+
+\subsection{Planted-spike portfolio model}
+
+The construction below is the portfolio-selection analogue of the planted models familiar from
+the planted-clique problem and sparse PCA \cite{ben-arous-wein}.
+
+Fix integers $n,k$ with $k = \rho\, n$ for some density $\rho\in(0,1/2)$. The slice
+$\Omega_{n,k} := \{\sigma\in\{0,1\}^n : \sum_{i}\sigma_i = k\}$ encodes cardinality-$k$
+portfolios as binary supports. Fix a planted target $\sigma^\star\in\Omega_{n,k}$. We
+assume the estimated mean-return vector takes the form
+\begin{equation}
+\hat\mu \;=\; \frac{\alpha}{\sqrt{k}}\,\sigma^\star \;+\; g, \qquad g\sim\mathcal N(0, I_n),
+\label{eq:model}
+\end{equation}
+with signal-to-noise parameter $\alpha\geq 0$, and we work with the linear
+score
+\begin{equation}
+H(\sigma) \;:=\; \hat\mu^\top\sigma \;=\; \alpha\sqrt{k}\,y(\sigma) + g^\top\sigma,
+\qquad y(\sigma) := \frac{\langle\sigma,\sigma^\star\rangle}{k}\in[0,1].
+\label{eq:H}
+\end{equation}
+Conditional on $\sigma$ (with $\sigma^\star$ fixed), $H(\sigma)\sim\mathcal N(\alpha\sqrt
+k\,y(\sigma),\, k)$: the variance is independent of $\sigma$ because $\|\sigma\|_2^2=k$
+for every $\sigma\in\Omega_{n,k}$.
+
+\paragraph{Why this idealisation.} Phase~1 showed that the empirical covariance is a
+rank-$r^\star$ factor structure plus a near-isotropic residual; we fold the
+deterministic part of the variance term $\frac{\gamma}{2k^2}\sigma^\top\hat\Sigma\sigma$
+into the planted direction $\sigma^\star$ and absorb the residual into~$g$. The
+empirical $\psi_2$-norms (median 3.6) are finite, so~\eqref{eq:model} is a
+Bernstein-faithful caricature of the real data.
+
+\paragraph{Sub-Gaussian universality (Lindeberg).} The proofs below use only the upper
+bound $\overline\Phi(x)\le e^{-x^2/2}$ on the Gaussian survival function at scale
+$\sqrt k$. If $g_i$ is instead sub-Gaussian with proxy $\sigma_g^2 = \|g_i\|_{\psi_2}^2$,
+the same bound holds with $\sigma_g^2$ in place of $1$, shifting the threshold to
+$a_\star(\rho;\sigma_g) = \sigma_g\,(1-\rho)^{-1}\sqrt{2\,h(\rho)}$. The Lindeberg
+swapping argument \cite{lindeberg} (see \cite[Ch.~11.1]{vershynin} for a modern treatment)
+shows that the conclusions of \cref{thm:detect,thm:forbid} are \emph{universal} in the
+noise distribution provided $\mathrm{Var}(g_i)=\sigma_g^2$ and the third absolute moment
+$\mathbb E|g_i|^3$ is bounded; the third-moment correction enters the rate as a
+lower-order term $O(n^{-1/2})$. The empirical $\psi_2$-norms (median $3.63$, all finite)
+imply $\mathbb E|R_{:,i}|^3$ is finite for every stock, so the Lindeberg argument
+activates.
+
+\paragraph{Boltzmann measure on the slice.} For $\beta>0$ we use the standard Gibbs measure
+$\pi_\beta(\sigma) := \frac{1}{Z(\beta)}\,e^{\beta H(\sigma)}$ with
+$Z(\beta) := \sum_{\sigma\in\Omega_{n,k}} e^{\beta H(\sigma)}$. Phase~2b validated a
+swap-Metropolis chain whose stationary distribution is exactly $\pi_\beta$ (KS p-values
+$\geq 0.42$ across $\beta\in\{0,50,200,1000,5000\}$).
+
+\subsection{First-moment formula and the function $L(y;a,\rho)$}
+
+Define, for a threshold $T\in\mathbb R$ and a planted-overlap value $y\in
+\frac{1}{k}\{0,1,\dots,k\}\cap[0,1]$,
+\[
+A_T(y) \;:=\; \bigl\{\sigma\in\Omega_{n,k} : H(\sigma)\geq T,\ y(\sigma)=y\bigr\}.
+\]
+The number of $\sigma\in\Omega_{n,k}$ with planted overlap exactly $y$ is
+$N_y := \binom{k}{ky}\binom{n-k}{k(1-y)}$.
+
+\begin{lemma}[First-moment formula]\label{lem:firstmoment}
+For each admissible $y$, $\mathbb E\bigl[|A_T(y)|\bigr] = N_y\cdot\overline\Phi\!\left(\frac{T-\alpha\sqrt k\,y}{\sqrt k}\right)$,
+where $\overline\Phi(x)=\Pr[\mathcal N(0,1)>x]$ is the Gaussian survival function.
+\end{lemma}
+\begin{proof}
+By linearity, $\mathbb E|A_T(y)| = \sum_{\sigma:y(\sigma)=y}\Pr[H(\sigma)\geq T]$. Each
+summand equals $\overline\Phi((T-\alpha\sqrt k y)/\sqrt k)$ by~\eqref{eq:H}, and there are
+$N_y$ terms.
+\end{proof}
+
+Take $\rho$ fixed, $\alpha=a\sqrt n$ with $a>0$ a constant, and threshold $T = a\sqrt{nk}$
+(the expected score of the planted). Stirling and the standard Gaussian tail bound
+$\overline\Phi(x)\leq e^{-x^2/2}$ give (a Cram\'er-style large-deviation rate function \cite{cramer-original} in disguise)
+\begin{equation}
+\frac{1}{n}\log\mathbb E|A_T(y)| \;\leq\; L(y;a,\rho) + o(1),\qquad
+\boxed{\ L(y;\,a,\rho) := s_\rho(y) - \tfrac{a^2}{2}(1-y)^2,\ }
+\label{eq:Ldef}
+\end{equation}
+where the slice entropy is
+\begin{equation}
+s_\rho(y) \;:=\; \rho\,h(y) + (1-\rho)\,h\!\left(\tfrac{\rho(1-y)}{1-\rho}\right),
+\qquad h(p) := -p\log p - (1-p)\log(1-p).
+\label{eq:srho}
+\end{equation}
+The function $L(\,\cdot\,;a,\rho)$ is concave on $[0,1]$ with $L(1)=0$ (the planted is the
+unique configuration at $y=1$, contributing entropy zero), and its sign on the interior
+governs whether $T$-near-optima exist at planted-overlap~$y$.
+
+\subsection{Detection upper bound (Theorem~\ref{thm:detect})}
+
+\begin{lemma}[{Endpoint maximum of $L$ on $[0,\rho]$}]\label{lem:endpoint-max}
+Fix $\rho\in(0,1/2)$ and $a>0$. The map $y\mapsto L(y;a,\rho)$ is concave on $[0,1]$
+and its restriction to $[0,\rho]$ is non-decreasing. In particular,
+\[
+\max_{y\in[0,\rho]} L(y;a,\rho) \;=\; L(\rho;a,\rho) \;=\; h(\rho)-\tfrac{a^2}{2}(1-\rho)^2.
+\]
+\end{lemma}
+\begin{proof}
+Concavity of $L$ in $y$ follows from concavity of the slice entropy $s_\rho$
+(a sum of two $h(\cdot)$ terms composed with affine maps of $y$) and concavity of
+$-\tfrac{a^2}{2}(1-y)^2$. A direct computation gives
+\[
+\partial_y s_\rho(y) \;=\; \rho\,\log\!\tfrac{1-y}{y}
+   \;-\;\rho\,\log\!\tfrac{1-\rho(1-y)/(1-\rho)}{\rho(1-y)/(1-\rho)},
+\]
+which is non-negative on $[0,\rho]$ since
+$\rho(1-y)/(1-\rho)\le 1-y$ there, while
+$\partial_y\bigl[-\tfrac{a^2}{2}(1-y)^2\bigr]=a^2(1-y)\ge 0$ on $[0,1]$. Hence $L$ is
+non-decreasing on $[0,\rho]$, and the maximum is attained at $y=\rho$ with
+$s_\rho(\rho)=h(\rho)$.
+\end{proof}
+
+\begin{theorem}[First-moment detection upper bound]\label{thm:detect}
+Let $\rho\in(0,1/2)$ and define
+\begin{equation}\label{eq:adetect}
+a_\star(\rho) \;:=\; \frac{1}{1-\rho}\,\sqrt{2\,h(\rho)}.
+\end{equation}
+For every $a > a_\star(\rho)$ there exist $\delta=\delta(a,\rho)>0$ and
+$c=c(a,\rho,\delta)>0$ such that, under the planted model~\eqref{eq:model} with
+$\alpha=a\sqrt n$ and threshold $T=a\sqrt{nk}$,
+\[
+\mathbb P\bigl[\,\exists\,\sigma\in\Omega_{n,k}\text{ with } |y(\sigma)-\rho|\le \delta
+\text{ and } H(\sigma)\ge T\,\bigr]\;\le\; e^{-c n}.
+\]
+\end{theorem}
+\begin{proof}
+At $y=\rho$, $s_\rho(\rho)=h(\rho)$, so $L(\rho;a,\rho)=h(\rho)-\tfrac{a^2}{2}(1-\rho)^2<0$
+iff $a>a_\star(\rho)$. By Lemma~\ref{lem:endpoint-max}, $L(y;a,\rho)\le L(\rho;a,\rho)<0$
+for all $y\in[0,\rho]$, so $L$ is strictly negative on $[0,\rho]$; by concavity and
+continuity of $L$ we can pick $\delta>0$ such that
+\[
+L(y;a,\rho)\;\le\;-c'\;<\;0 \qquad \text{uniformly on}\quad
+y\in[\rho-\delta,\rho+\delta]\cap[0,1].
+\]
+The admissible values of $y(\sigma)$ for $\sigma\in\Omega_{n,k}$ form a finite lattice
+$\{j/k:0\le j\le k\}$, so the number of admissible $y$ in this two-sided neighborhood is
+at most $2\delta k + 1 = O(n)$. Union-bounding Markov's inequality with the rate
+bound~\eqref{eq:Ldef} over these values gives
+\[
+\Pr\!\bigl[\exists \sigma \text{ with } |y(\sigma)-\rho|\le\delta,\, H(\sigma)\ge T\bigr]
+  \;\le\; (2\delta k+1)\,e^{-c' n}(1+o(1))
+  \;\le\; e^{-(c'/2)\,n},
+\]
+where the polynomial prefactor is absorbed into the exponent for $n$ large enough.
+\end{proof}
+
+\paragraph{Numerical example.} With $\rho=0.20$, the formula gives
+$a_\star(0.20)=(1-0.20)^{-1}\sqrt{2\,h(0.20)}\approx 1.250$. Below this SNR, the
+planted spike is statistically undetectable: the expected number of random subsets
+attaining the planted score is exponentially large. Above it, that count is
+exponentially small.
+
+\paragraph{No matching lower bound.} The upper bound above is a first-moment statement.
+A matching lower bound -- showing that some specific algorithm succeeds, or some
+specific test fails, for $a<a_\star(\rho)$ -- requires a second-moment computation
+$\mathbb E|A_T(y)|^2/(\mathbb E|A_T(y)|)^2 = 1+o(1)$ on the slice. The same argument
+is known for the planted-clique problem; we
+conjecture that it carries over here and that $a_\star(\rho)$ is the sharp threshold,
+but we do not prove it.
+
+\subsection{Forbidden-overlap interval (Theorem~\ref{thm:forbid})}
+
+The detection theorem only excludes near-optima from a neighborhood of $y=\rho$. The
+following statement extends the forbidden region: above detection, no near-optimum has
+planted-overlap below an explicit threshold $y_a\in(\rho,1)$.
+
+\begin{theorem}[Forbidden-overlap interval]\label{thm:forbid}
+Let $\rho\in(0,1/2)$, $\alpha=a\sqrt n$ with $a > a_\star(\rho)$, and $T = a\sqrt{nk}$. Define
+\begin{equation}\label{eq:ya}
+y_a(\rho) \;:=\; \sup\bigl\{y\in[\rho,1) : L(y;a,\rho) \leq 0\bigr\}.
+\end{equation}
+Then $y_a(\rho)\in(\rho, 1)$ is well-defined, and for every sufficiently small $\delta>0$
+there exists $c=c(a,\rho,\delta)>0$ with
+\begin{equation}\label{eq:forbid}
+\Pr\bigl[\,\exists\,\sigma\in\Omega_{n,k} : \rho+\delta \le y(\sigma) \le y_a(\rho) - \delta
+\text{ and } H(\sigma) \ge T\,\bigr] \;\le\; e^{-c n}.
+\end{equation}
+Equivalently, every $T$-near-optimum has planted-overlap either below $\rho+\delta$
+(excluded by \cref{thm:detect}) or above $y_a(\rho)-\delta$.
+\end{theorem}
+\begin{proof}
+The function $y\mapsto L(y;a,\rho)$ is continuous and concave on $[0,1]$ with
+$L(\rho;a,\rho)<0$ (since $a > a_\star(\rho)$), $L(1;a,\rho) = 0$, and
+$\partial_y L(y;a,\rho)\big|_{y\to 1^-}\to-\infty$ (the entropy term $h(\rho(1-y)/(1-\rho))$
+has slope $-\infty$ as $y\to 1$). Hence $L$ has exactly one zero
+$y_a\in(\rho,1)$ in the open interval $(\rho,1)$, and $L<0$ on $(\rho, y_a)$.
+
+For the probability bound, let $c' := -\sup_{y\in[\rho+\delta, y_a-\delta]} L(y;a,\rho) > 0$
+(strict positivity on a compact subinterval). The admissible discrete values of
+$y(\sigma)$ form the lattice $\{j/k : 0\le j\le k\}$, so the number of admissible $y$ in
+$[\rho+\delta,y_a-\delta]$ is at most $k+1\le n+1$. By Markov's inequality combined with
+\eqref{eq:Ldef},
+\begin{equation}\label{eq:union}
+\Pr[\exists\sigma\text{ in the forbidden band, } H(\sigma)\ge T]
+  \;\le\; \sum_{y\in\text{band}} \mathbb E|A_T(y)|
+  \;\le\; (n+1)\,e^{-c' n + o(n)}
+  \;\le\; e^{-(c'/2)\,n}
+\end{equation}
+for $n$ large enough. (The exponential bound dominates the linear prefactor; one can
+sharpen the prefactor from $n$ to $1$ via Talagrand-style concentration of $|A_T(y)|$
+around its mean \cite{talagrand-concentration}, or Janson-style large-deviation bounds
+\cite{janson}, but the present bound already gives the exponential rate that matters.)
+\end{proof}
+
+\paragraph{Numerical example.} For $\rho=0.20$ and $a = 2.0$ (well above the detection
+threshold $a_\star(0.20)\approx 1.25$), numerical root-finding in the companion notebook
+\texttt{04a\_ogp\_theory.ipynb} gives $y_a\approx 0.55$. No near-optimum exists at
+planted overlap in $[0.21, 0.54]$; the remaining near-optima have $y\geq 0.55$ or
+$y\leq 0.20$, the latter excluded by Theorem~\ref{thm:detect}.
+
+\subsection{Algorithmic consequence: a constrained hardness corollary}\label{ssec:cor-scope}
+
+The forbidden-overlap interval~\eqref{eq:forbid} translates into a hardness statement
+for algorithms whose iterates are Hamming-stable along an input-noise interpolation.
+The class is narrow, and below we say precisely which algorithms it captures.
+
+The class of $\eta$-Hamming-stable algorithms defined next is closely related to (but
+not identical with) the low-degree polynomial estimator class for which a comprehensive
+hardness theory exists.
+
+\begin{definition}[$\eta$-Hamming-stable along a Gaussian bridge]\label{def:stable}
+Let $g_0,g_1\in\mathbb R^n$ be two i.i.d.\ realizations of the noise and define the
+Gaussian bridge $g_s := \sqrt{1-s}\,g_0 + \sqrt{s}\,g_1$, $s\in[0,1]$, with
+$\hat\mu_s = (\alpha/\sqrt k)\,\sigma^\star + g_s$. An algorithm
+$\mathcal A:\mathbb R^n\to\Omega_{n,k}$ is \emph{$\eta$-Hamming-stable along the bridge}
+if the discrete-time evolution $s\mapsto\mathcal A(\hat\mu_s)$ on the lattice
+$s\in\{0,\tfrac1n,\dots,1\}$ has total Hamming displacement
+$\sum_{s} d_H(\mathcal A(\hat\mu_{s_-}),\mathcal A(\hat\mu_s)) \le \eta\,k$
+with probability $1-o(1)$.
+\end{definition}
+
+\begin{corollary}[Hardness for path-stable algorithms]\label{cor:hardness}
+Under the hypotheses of Theorem~\ref{thm:forbid}, fix $\eta < (y_a(\rho)-\rho)/2$.
+Suppose the bridge endpoint $\hat\mu_0$ is such that $\mathcal A(\hat\mu_0)$ has overlap
+$y(\mathcal A(\hat\mu_0))\le \rho + o(1)$ (e.g.\ $\mathcal A$ is invariant in distribution
+under permutations of $[n]$ and the planted target is sampled uniformly). Then for every
+$\eta$-Hamming-stable algorithm $\mathcal A$ satisfying $\mathcal A(\hat\mu_1)=\sigma^\star$,
+\[
+\Pr\bigl[\,H(\mathcal A(\hat\mu_s))\ge T \ \text{for every}\ s\in\{0,\tfrac1n,\dots,1\}\bigr]
+\;\le\; o(1) + e^{-c n}.
+\]
+\end{corollary}
+\begin{proof}[Sketch]
+By stability, the total Hamming displacement along the lattice is $\le \eta k$; in particular
+the largest single-step jump is $\le \eta k$, so $|y(\mathcal A(\hat\mu_{s+1/n})) -
+y(\mathcal A(\hat\mu_s))| \le \eta < (y_a-\rho)/2$. Since
+$y(\mathcal A(\hat\mu_0))\le\rho$ and (under recovery) $y(\mathcal A(\hat\mu_1))=1$, the
+discrete intermediate-value theorem produces some $s^\star\in[0,1]$ with
+$y(\mathcal A(\hat\mu_{s^\star}))\in(\rho+\delta, y_a(\rho)-\delta)$. \cref{thm:forbid}
+then forces $H(\mathcal A(\hat\mu_{s^\star}))<T$ with probability $1-e^{-cn}$.
+\end{proof}
+
+\paragraph{Which algorithms fall in the corollary's class.}
+The corollary rules out a specific class of algorithms and says nothing about others.
+\begin{itemize}\itemsep=2pt
+\item \textbf{LASSO-Markowitz} (\S\ref{sec:lasso}) is a Lipschitz function of $\hat\mu$;
+rounding to top-$k$ support introduces only $O(1)$ Hamming jumps along the bridge, so
+LASSO is $\eta$-stable for $\eta = o(1)$. The corollary then predicts that LASSO cannot
+maintain near-optimality along the input path for $a>a_\star(\rho)$. Phase~2a reports
+LASSO gaps of $4$ to $11$\,bp uniformly across $(n,k)$, consistent with that prediction
+but not a proof of it: Phase~2a uses the empirical $J$-objective, while the corollary
+controls the linear $H$.
+
+\item \textbf{Top-eigenvector projection} is similarly $\eta$-stable outside a
+Lebesgue-null set and falls in the corollary's class.
+
+\item \textbf{Greedy forward selection} is not $\eta$-Hamming-stable: a single
+infinitesimal perturbation of $\hat\mu$ can swap two indices near the
+rank-$k/(k{+}1)$ boundary and trigger a combinatorial cascade. Phase~2a sees greedy
+tracking the oracle closely, consistent with the corollary not applying.
+
+\item \textbf{Top-$k$ thresholding of $\hat\mu$} (the seed stage of \textsc{Slh}) is
+$\eta$-stable with $\eta=O(1)$ outside Lebesgue-null ties: a small Gaussian perturbation
+moves at most $O(1)$ coordinates across the $k$-th-largest threshold per sub-interval of
+the bridge. So top-$k$ thresholding is in the corollary's class. But the
+contradiction is only triggered when $a < a_{\mathrm{rec}}$ (the recovery threshold of
+\cref{prop:slh-recovery}); for $a > a_{\mathrm{rec}}$ the hypothesis
+``$\mathcal A(\hat\mu_0)$ has $y\le\rho$'' fails on the bridge and the corollary is
+vacuous in the opposite direction. The dichotomy matters: on real S\&P data we sit in
+Regime~I (\S\ref{sec:regimes}), where neither premise of the corollary is satisfied.
+
+\item \textbf{The constrained-Metropolis chain} of \S\ref{ssec:p2b} fails
+\cref{def:stable}; it is the dynamics whose mixing-time blow-up at $(40,10)$ provides
+our empirical evidence for a geometric barrier on the full quadratic objective $J$.
+\end{itemize}
+
+\paragraph{What the corollary does not establish.} The corollary is a statement about
+the linear score $H$, not the empirical objective $J$. By itself it does not certify
+that any specific algorithm fails on real S\&P data. The fact that LASSO and
+top-eigenvector underperform the oracle in Phase~2a is consistent with the corollary,
+not a proof.
+
+\subsection{Discussion: classical OGP and what is conjectural}
+\label{ssec:ogp-discussion}
+
+Theorems~\ref{thm:detect} and~\ref{thm:forbid} produce a single-sided forbidden-overlap
+interval: the forbidden region is $[\rho+\delta, y_a(\rho)-\delta]$, terminating before
+the planted point. The classical OGP shape
+is by contrast an interior forbidden interval $(y_\ell, y_h)\subsetneq(\rho,1)$
+separating two non-trivial allowed components. Three remarks situate the difference.
+
+\begin{enumerate}
+\item \textbf{Why the simple model has no interior forbidden gap.} The threshold
+function $a_\star(y;\rho) := (1-y)^{-1}\sqrt{2\, s_\rho(y)}$ is monotone increasing on
+$(\rho,1)$ (numerically verified in the companion notebook for $\rho\in[0.05, 0.40]$).
+The sub-level set $\{y : a_\star(y;\rho)<a\}$ is therefore a single connected interval
+$[\rho, y_a(\rho)]$ for every $a>a_\star(\rho;\rho)$, ruling out a classical OGP shape
+from the first moment alone.
+
+\item \textbf{Where the classical OGP comes from in the full model.} The empirical
+Hamiltonian $J(\sigma) = \tfrac{1}{k}\hat\mu^\top\sigma - \tfrac{\gamma}{2k^2}\sigma^\top
+\hat\Sigma\sigma$ contains a quadratic form that~\eqref{eq:model} drops. Phase~1
+documents $32$ outlier eigenvalues in $\hat\Sigma$, so the quadratic form is a low-rank
+deterministic spike plus an isotropic random part. The isotropic part contributes a
+Sherrington-Kirkpatrick-type coupling between subsets which, by the standard
+second-moment argument~\cite{sherrington-kirkpatrick}, should produce
+an interior forbidden interval at intermediate inverse temperature.
+
+\item \textbf{Empirical verification.} Theorem~\ref{thm:forbid} predicts that MCMC
+samples from $\pi_\beta$ at high $\beta$ concentrate either near $y=\rho$ or near
+$y=1$, with no mass at intermediate overlaps. Phase~3b runs this experiment on
+synthetic data matched to the empirical SNR and on the real S\&P~500 panel, observing
+the bimodality for the linear model (where Theorem~\ref{thm:forbid} predicts it
+directly) and not yet for the full quadratic objective at $(30,6)$ (where the interior
+forbidden gap is conjectural and expected to require larger $n$).
+\end{enumerate}
+
+The detection threshold of Theorem~\ref{thm:detect} and the forbidden-overlap interval
+of Theorem~\ref{thm:forbid} are the rigorous theoretical contributions of the project.
+The companion notebook \texttt{04a\_ogp\_theory.ipynb} verifies the threshold numerically
+on a $(\rho, a)$ grid and produces Figures~\ref{fig:Lcurve},
+\ref{fig:detection-curve}, and~\ref{fig:phase} of \S\ref{sec:ogp-empirical}.
+
+\subsection{The three regimes}\label{sec:regimes}
+
+Theorems~\ref{thm:detect} and~\ref{thm:forbid} together with the recovery proposition
+of~\S\ref{sec:slh-recovery} partition the SNR axis into three regimes whose qualitative
+behaviour determines which algorithms succeed. We define them explicitly here because
+the rest of the paper refers to them repeatedly, and because placing real S\&P data on
+the planted-spike model is less clean than it might look.
+ 
+\paragraph{Definitions.}
+Fix $\rho \in (0, 1/2)$ and residual noise level $\nu > 0$.
+With $a := \alpha / \sqrt{n}$ the rescaled SNR of the planted spike,
+\begin{align*}
+   a_\star(\rho) &:= (1-\rho)^{-1}\sqrt{2 h(\rho)}
+   && \text{(detection threshold, Thm.~\ref{thm:detect})},\\
+   a_{\mathrm{rec}}(n,k,\nu) &:= \nu\sqrt{\rho}\,
+       \bigl(\sqrt{2\log(n-k)} + \sqrt{2\log k}\bigr)
+   && \text{(recovery threshold, ~\ref{sec:slh-recovery})}.
+\end{align*}
+ 
+\begin{description}
+  \item[Regime I: undetectable, $a < a_\star(\rho)$.]
+  The expected number of $T$-near-optima at random overlap $y\approx\rho$ is
+  exponentially large in $n$. No test based on $\hat\mu$ alone separates the
+  planted instance from a null instance; both detection and optimisation are
+  information-theoretically impossible.
+
+  \item[Regime II: detectable but algorithmically hard,
+  $a_\star(\rho) < a < a_{\mathrm{rec}}(n,k,\nu)$.]
+  The planted point is statistically identifiable, but by Theorem~\ref{thm:forbid}
+  the level sets of $H$ exhibit a forbidden-overlap interval $[\rho, y_a(\rho)]$,
+  and by Corollary~\ref{cor:hardness} every $\eta$-Hamming-stable algorithm with
+  $\eta < k(y_a-\rho)/2$ fails along an input bridge. This is the OGP-active regime
+  in which simple polynomial-time methods (LASSO, top-$k$ thresholding) cannot
+  recover the planted support.
+
+  \item[Regime III: recovery, $a > a_{\mathrm{rec}}(n,k,\nu)$.]
+  Theorem~\ref{prop:slh-recovery} shows that the ridge-whitened top-$k$ seed
+  recovers the planted support with probability $1-o(1)$; the hypothesis of
+  Corollary~\ref{cor:hardness} (bridge endpoint at overlap $\rho$) fails, so the
+  corollary is vacuous and no OGP obstruction binds.
+\end{description}
+ 
+\paragraph{Where does real S\&P data sit?}
+We estimate $\hat a$ on the train block by aligning the planted model
+$\hat\mu = (\alpha/\sqrt{k})\sigma^\star + g$, $g\sim\mathcal N(0,\nu^2 I_n)$
+with the empirical data. Since $\mathbb E[\hat\mu_i \mid i\in\sigma^\star]
+= \alpha/\sqrt{k} = a\sqrt{n/k}$, a natural estimator from the brute-force
+oracle support $S^\star$ is
+\begin{equation}\label{eq:ahat-est}
+   \hat a \;:=\; \frac{\|\hat\mu_{S^\star}\|_2}{\sqrt{n}\,\hat\nu},
+   \qquad
+   \hat\nu^2 \;:=\; \tfrac{1}{n}\operatorname{tr}(\hat\Sigma_\perp),
+\end{equation}
+with $\hat\Sigma_\perp$ the covariance residualized against the top
+$r{=}5$ factors. On $(n,k){=}(30,6)$, train block $T_{\mathrm{tr}}{=}2009$,
+seed matched to Phase~3b, we obtain
+\[
+   \hat\nu^2 \;\approx\; 1.88\times 10^{-4}, \qquad
+   \|\hat\mu_{S^\star}\|_2 \;\approx\; 1.86\times 10^{-3}, \qquad
+   \boxed{\hat a \;\approx\; 0.025}.
+\]
+A contrast-based estimator
+$\hat a_{\mathrm{c}} := \sqrt{k}\,(\bar\mu_{S^\star} - \bar\mu_{\bar S^\star})/\hat\nu$
+gives $\hat a_{\mathrm{c}} \approx 0.044$. Across the cells $\{(20,5),
+(30,6), (50,5)\}$ both estimators stay within $[0.02, 0.05]$, far below the
+detection threshold $a_\star(\rho) \in [0.9, 1.4]$ and at the order of the recovery
+threshold $a_{\mathrm{rec}} \approx 0.025$ on these cells (and below it for most).
+ 
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{cccccc}
+\toprule
+$(n,k)$ & $\rho = k/n$ & $\hat\nu$ & $\hat a$ & $a_\star(\rho)$ &
+verdict \\
+\midrule
+$(20,5)$ & $0.25$ & $1.20\times 10^{-2}$ & $0.032$ & $1.414$ & Regime I \\
+$(30,6)$ & $0.20$ & $1.37\times 10^{-2}$ & $0.025$ & $1.251$ & Regime I \\
+$(50,5)$ & $0.10$ & $1.31\times 10^{-2}$ & $0.021$ & $0.896$ & Regime I \\
+\bottomrule
+\end{tabular}
+\caption{Empirical SNR estimate $\hat a$ from~\eqref{eq:ahat-est} on the
+train block. Across three representative cells $\hat a$ lies $20$--$60\times$
+below the detection threshold $a_\star(\rho)$: under the planted-spike
+calibration of~\eqref{eq:factor-model}, real S\&P daily returns sit
+deep in Regime~I.}
+\label{tab:regime-numbers}
+\end{table}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.85\textwidth]{figs/regime_placement.png}
+\caption{Empirical SNR $\hat a$ on real S\&P 500 daily returns versus the
+regime boundaries from \S\ref{sec:regimes}. Bars show the norm
+($\hat a_{\mathrm{norm}}$) and contrast ($\hat a_{\mathrm{c}}$)
+estimators per cell; the red vertical segment marks the detection
+threshold $a_\star(\rho)$ and the dashed orange segment marks the
+sharp recovery threshold $a_{\mathrm{rec}}^{\mathrm{sharp}}$ at that
+cell. The pink shaded region is Regime~I (undetectable). Across all
+four cells, $\hat a$ lies $44$--$56\times$ below $a_\star(\rho)$:
+empirical S\&P data sits decisively in Regime~I on the planted-spike
+calibration. Reproduced by \texttt{notebooks/07\_regime\_placement.ipynb}.}
+\label{fig:regime-placement}
+\end{figure}
+
+\paragraph{What this means.}
+On the daily-return scale, the empirical SNR placement is unambiguous: Regime~I, well
+below detection. At first glance this seems puzzling, because the brute-force oracle
+does find a non-trivial portfolio ($J^\star \neq 0$, with in-sample Sharpe of order
+one). The resolution is that the planted-spike model is a stylised caricature,
+not a calibrated fit to daily S\&P returns. Three points pin this down.
+
+\begin{enumerate}
+  \item The planted model assumes a sparse spike of magnitude $\alpha/\sqrt{k}$
+  embedded in iid Gaussian noise of variance $\nu^2$. Real $\hat\mu$ is not sparse in
+  that sense: the cross-sectional standard deviation of $\hat\mu$
+  ($4.6\times 10^{-4}$) is comparable to its average on the oracle support
+  ($6.3\times 10^{-4}$), a contrast-to-noise ratio of only $\approx 1\sigma$. There is
+  no large planted signal to detect.
+
+  \item The relevant ``hardness'' for real data is not the OGP obstruction of
+  Regime~II. What makes the in-sample problem easy is that $C(n,k)$ is small enough to
+  enumerate, that $\hat\Sigma$ is dominated by a rank-one market factor (making the
+  marginal contribution of each asset nearly separable, which is why greedy is
+  near-optimal), and that the quadratic coupling in $J$ is small in the relevant range
+  ($\gamma/k^2 \approx 0.28$). \textsc{Slh}'s in-sample success on real data is
+  explained by these structural features, not by any Regime~III mechanism.
+
+  \item The out-of-sample collapse measures something real but separate. The
+  $43\%$ Sharpe drop reported in Table~\ref{tab:oos-sharpe} is a statement about
+  estimation error in $(\hat\mu, \hat\Sigma)$, not about failure to recover a planted
+  signal. In Regime~I language, the in-sample optimum is fitting a realisation of the
+  noise $g$; there is no $\sigma^\star$ to recover, and the held-out block has a
+  different realisation.
+\end{enumerate}
+ 
+\paragraph{Role of the OGP theorems given that real data sits in Regime~I.}
+The detection and forbidden-overlap theorems describe what would happen on a
+higher-SNR instance of the planted-spike model. They are a stylised exploration:
+conditional on the planted model being a faithful description, the SNR at which simple
+methods fail ($a_\star$) and at which top-$k$ recovers ($a_{\mathrm{rec}}$) are
+explicit. The synthetic experiments of~\S\ref{ssec:p3b-synth} verify the
+forbidden-overlap interval directly, and the mixing-time blow-up
+of~\S\ref{ssec:p2b} on $(40,10)$ shows that the geometric obstruction is real on a
+synthetic instance in Regime~II.
+
+What the OGP analysis does not deliver is an explanation of \textsc{Slh}'s performance
+on real S\&P data; real S\&P sits below the regime where the theory binds. The role
+of~\S\S\ref{ssec:p2b}--\ref{ssec:cor-scope} is therefore to locate the boundary
+between the OGP-active regime and the empirical one, and to record what would have to
+change in the data for the theory to be practically binding. We return to this
+in~\S\ref{ssec:ogp-discussion}.
