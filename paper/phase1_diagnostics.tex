@@ -12,13 +12,13 @@ $80\%$ of the window (a $T_{\mathrm{tr}}=2009$-day train block); the held-out $2
 for out-of-sample Sharpe assessments later. The notebook \texttt{extract\_data.ipynb} produces
 the cleaned panel and writes \texttt{data/returns.npy}.
 
-\paragraph{Why diagnostics matter.} The portfolio-selection problem is one of \emph{discrete
-optimization on noisy data}. Whether a particular algorithm or theoretical bound applies
-depends on (i) the tail behaviour of $\hat\mu_i$, which controls Bonferroni and Bernstein
-concentration; (ii) the spectrum of $\hat\Sigma$, which controls the Marchenko-Pastur (MP)
-edge and the strength of the dominant factor; and (iii) the Restricted Isometry Property
-(RIP) of $\hat\Sigma$, which controls when convex relaxations are equivalent to the
-combinatorial problem. We characterise all three on the train block.
+\paragraph{Why diagnostics matter.} Portfolio selection is discrete optimisation on
+noisy data, and which algorithms or bounds are legitimate depends on three properties
+of that data. The tail behaviour of $\hat\mu_i$ controls Bonferroni and Bernstein
+concentration. The spectrum of $\hat\Sigma$ controls the Marchenko-Pastur (MP) edge and
+the strength of the dominant factor. The Restricted Isometry Property (RIP) of
+$\hat\Sigma$ controls when convex relaxations are equivalent to the combinatorial
+problem. We measure all three on the train block.
 
 \subsection{Sub-Gaussian / sub-exponential norms}\label{ssec:psi}
 
@@ -31,11 +31,12 @@ all $i$): we obtain median $\|\cdot\|_{\psi_2}=3.63$ vs.\ Gaussian reference $1.
 median $\|\cdot\|_{\psi_1}=1.66$ vs.\ Laplace reference $1.44$.
 
 \noindent\emph{Implication.} The data are sub-Gaussian but with $\psi_2$ inflated by a
-factor of roughly $2\times$ over the Gaussian benchmark. This puts us squarely in the
-Bernstein regime \cite[Ch.~2.8]{vershynin}: any concentration argument we deploy (e.g., for max-norm of $\hat\mu$ or
-for entrywise covariance bounds) carries an effective variance proxy
+factor of roughly $2\times$ over the Gaussian benchmark, the Bernstein regime
+of~\cite[Ch.~2.8]{vershynin}. Any concentration argument we deploy (for the max-norm
+of $\hat\mu$, or for entrywise covariance bounds) therefore carries an effective
+variance proxy
 $\hat\nu^2 \approx (3.63/1.63)^2 \cdot \nu_{\mathrm{Gaussian}}^2 \approx 5\,\nu_{\mathrm{Gaussian}}^2$.
-We will use $\hat\nu$ to instantiate the recovery threshold of
+We use $\hat\nu$ to instantiate the recovery threshold of
 Theorem~\ref{prop:slh-recovery} on real data.
 
 \begin{figure}[ht]
@@ -53,29 +54,27 @@ Theorem~\ref{prop:slh-recovery} on real data.
 
 \subsection{Spectral structure of $\hat\Sigma$}\label{ssec:spectrum}
 
-For the empirical covariance with $n/T=0.186$ the Marchenko-Pastur edges \cite{marchenko-pastur} (under iid
+With $n/T=0.186$ the Marchenko-Pastur edges~\cite{marchenko-pastur} (under iid
 isotropic returns of unit variance, rescaled to the empirical trace) are
 $\lambda_\pm = (1\pm\sqrt{n/T})^2 = (1\pm 0.4316)^2$ scaled by
-$\bar\sigma^2 := \tfrac1n\,\mathrm{tr}(\hat\Sigma)$. Concretely
-$\lambda_+ = 7.28\!\times\!10^{-4}$ (in daily-return units squared).
-The top sample eigenvalue is $\lambda_{\max}(\hat\Sigma) = 7.01\!\times\!10^{-2}$, i.e.,
+$\bar\sigma^2 := \tfrac1n\,\mathrm{tr}(\hat\Sigma)$, giving
+$\lambda_+ = 7.28\!\times\!10^{-4}$ in daily-return units squared. The top sample
+eigenvalue is $\lambda_{\max}(\hat\Sigma) = 7.01\!\times\!10^{-2}$, so
 \[
   \frac{\lambda_{\max}(\hat\Sigma)}{\lambda_+}
    \;=\; 96.3,
 \]
 $32$ eigenvalues exceed the MP edge, and the top $10$ eigenvalues account for $53.1\%$ of
-$\mathrm{tr}(\hat\Sigma)$. The largest eigenvector is dominated by uniformly-positive
-loadings: the empirical \emph{market factor}. We henceforth treat $\hat\Sigma$ as a
-factor-plus-noise object,
+$\mathrm{tr}(\hat\Sigma)$. The leading eigenvector loads uniformly positive on every
+stock: the empirical market factor. We model $\hat\Sigma$ as a factor-plus-noise object,
 \begin{equation}\label{eq:factor-noise}
   \hat\Sigma \;\approx\; \sum_{j=1}^{r} \lambda_j\, v_j v_j^\top \;+\; \nu^2 I_n,
   \qquad r\in[5,32],
 \end{equation}
-i.e., a Wishart bulk plus a low-rank deterministic spike in the random-matrix
-sense. This justifies the ridge regularisation in stage~(S1) of \textsc{Slh}\
-(\S\ref{sec:slh}): the spectral-aware step
-$(\gamma\hat\Sigma + \eta I)^{-1}\hat\mu$ inverts the factor part cleanly while the
-$\eta\, I$ term tames the bulk.
+that is, a Wishart bulk plus a low-rank deterministic spike. This is what justifies
+the ridge regularisation in stage~(S1) of \textsc{Slh}\ (\S\ref{sec:slh}): the
+spectral-aware step $(\gamma\hat\Sigma + \eta I)^{-1}\hat\mu$ inverts the factor part
+cleanly while $\eta I$ tames the bulk.
 
 \begin{figure}[ht]
 \centering
@@ -115,20 +114,19 @@ bounds on $\delta_k$---satisfy
   \delta_5 \;\ge\; 0.846, \quad \delta_{10} \;\ge\; 0.867,
   \quad \delta_{20} \;\ge\; 1.045, \quad \delta_{50} \;\ge\; 0.853,
 \]
-each far exceeding $\sqrt 2 - 1$. Hence $\delta_{2k} \ge \delta_k > \sqrt 2 - 1$ holds
-deterministically (certified by the empirical maxima, not merely by the $95$-th
-percentile) for every $k$ we test, refuting the Cand\`es-Tao recovery condition.
-We therefore expect LASSO-Markowitz to be a poor recovery algorithm on this dataset,
-a prediction that Phase~2a confirms quantitatively.
+each far exceeding $\sqrt 2 - 1$. So $\delta_{2k} \ge \delta_k > \sqrt 2 - 1$
+holds deterministically (certified by the empirical maxima, not merely by the
+$95$-th percentile) at every $k$ we test, ruling out the Cand\`es-Tao recovery
+condition. LASSO-Markowitz should therefore be a poor recovery algorithm on this
+dataset; Phase~2a confirms the prediction quantitatively.
 
 \paragraph{Why the $95$-th percentile is also informative.}
-The empirical maxima give the deterministic certificate above; the $95$-th percentile
-additionally tells us that the RIP violation is \emph{typical}, not a rare worst-case
-quirk. If $95\%$ of randomly sampled $k$-subsets already give $\delta_k > 0.85$, the
-empirical covariance is uniformly far from satisfying RIP on the slice, which is what
-one expects from a covariance matrix dominated by a rank-one market factor: any subset
-that loads non-trivially on that factor inherits an eigenvalue much larger than $1$
-after diagonal normalization.
+The empirical maxima give a deterministic certificate; the $95$-th percentile says the
+RIP violation is typical rather than a rare worst case. If $95\%$ of randomly sampled
+$k$-subsets already give $\delta_k > 0.85$, the empirical covariance is uniformly far
+from satisfying RIP on the slice, which is what one expects from a covariance dominated
+by a rank-one market factor: any subset that loads non-trivially on that factor inherits
+an eigenvalue much larger than $1$ after diagonal normalisation.
 
 \begin{figure}[ht]
 \centering
@@ -136,10 +134,10 @@ after diagonal normalization.
 \caption{Empirical RIP probe. For each $k\in\{5,10,20,50\}$ we evaluate $\delta_k$ on $10^4$ random subsets and show the median, $95$-th percentile, and maximum. Since $\delta_{2k}\ge\delta_k$ deterministically, any lower bound on $\delta_k$ is also a lower bound on $\delta_{2k}$. The dashed line is the Cand\`es-Tao threshold $\sqrt 2 - 1\approx 0.414$ that $\delta_{2k}$ must satisfy. The empirical maxima of $\delta_k$ exceed the threshold for every $k$, certifying deterministically that $\delta_{2k}$ fails the condition; LASSO-Markowitz cannot be expected to recover the combinatorial optimum.}\label{fig:rip}
 \end{figure}
 
-\paragraph{Summary of Phase 1.} The S\&P data is sub-Gaussian (Bernstein-applicable);
-$\hat\Sigma$ is dominated by a market factor plus $\sim\!30$ outlier eigenvalues; and RIP
-fails. These three facts \emph{together} motivate the algorithmic design of \textsc{Slh}\
-(spectral seed \emph{plus} combinatorial polish, rather than convex relaxation) and the
-theoretical scope of Phase~3 (planted-spike model whose noise level $\nu$ is calibrated to
-the residual variance $\hat\nu^2 \approx \tfrac{1}{n}\mathrm{tr}(\hat\Sigma_{\perp})$
-after factor projection).
+\paragraph{Summary of Phase 1.} The S\&P data is sub-Gaussian (Bernstein-applicable),
+$\hat\Sigma$ is dominated by a market factor plus $\sim\!30$ outlier eigenvalues, and
+RIP fails. Taken together these motivate the design of \textsc{Slh}\ (spectral seed
+plus combinatorial polish, rather than convex relaxation) and the scope of the
+planted-spike model used in Phase~3, whose noise level $\nu$ is calibrated to the
+residual variance $\hat\nu^2 \approx \tfrac{1}{n}\mathrm{tr}(\hat\Sigma_{\perp})$ after
+factor projection.

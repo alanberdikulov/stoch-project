@@ -5,29 +5,29 @@
 \subsection{Problem formulation}\label{ssec:formulation}
 
 Fix a cardinality $k$ and risk-aversion $\gamma>0$. The cardinality-constrained
-\emph{equal-weight Markowitz objective} is
+equal-weight Markowitz objective is
 \begin{equation}\label{eq:Jdef}
   J(\sigma) \;:=\; \frac{1}{k}\, \hat\mu^\top\sigma \;-\; \frac{\gamma}{2 k^2}\,\sigma^\top
   \hat\Sigma\sigma, \qquad \sigma\in\Omega_{n,k},
 \end{equation}
 where $\Omega_{n,k} := \{\sigma\in\{0,1\}^n : \sum_i\sigma_i = k\}$ is the cardinality-$k$
-slice. We use $\gamma=10$ throughout. Equation~\eqref{eq:Jdef} arises from
-mean-variance optimisation under the constraint $w_i = \sigma_i / k$ (equal weights on
-the chosen support); allowing continuous weights modifies only constants in the analysis
-and does not change the combinatorial difficulty. The decision problem we attack is
+slice. We fix $\gamma=10$ throughout, a conventional value for daily returns;
+allowing continuous weights $w_i = \sigma_i/k$ to be free
+within $\Omega_{n,k}$ modifies only constants in the analysis and does not change the
+combinatorial difficulty. The decision problem is
 \begin{equation}\label{eq:problem}
   \sigma^\star \;:=\; \arg\max_{\sigma\in\Omega_{n,k}} J(\sigma).
 \end{equation}
 
 \subsection{Brute-force oracle}\label{ssec:oracle}
 
-For sufficiently small $(n,k)$ the problem is solved exactly by enumerating all
+For small enough $(n,k)$ the problem is solved exactly by enumerating all
 $\binom{n}{k}$ subsets. Vectorised numpy with chunked indexing runs the
-$(n,k)=(50,5)$ instance ($\binom{50}{5}\approx 2.1\times 10^6$ subsets) in $0.75$\,s
-on a single core. We treat the resulting $\sigma^\star$ as the ground-truth oracle in
-all subsequent benchmarks. Beyond $\binom{n}{k}\sim 10^7$ enumeration becomes infeasible
-in wall-clock time; for such cells we use the matched-density brute-force regime
-$(n,k)=(30,6)$ in Phase~3b and rely on near-oracle simulated annealing as a sanity check.
+$(50,5)$ instance ($\binom{50}{5}\approx 2.1\times 10^6$ subsets) in $0.75$\,s on a
+single core. We treat the resulting $\sigma^\star$ as the ground-truth oracle in
+all subsequent benchmarks. Past $\binom{n}{k}\sim 10^7$ enumeration becomes infeasible
+in wall-clock time; for those cells we work on the matched-density regime $(30,6)$ in
+Phase~3b and treat near-oracle simulated annealing as the reference.
 
 \subsection{Baselines}\label{sec:lasso}
 
@@ -69,26 +69,24 @@ $(n,k)$ & top-eig & ms & greedy & ms & LASSO & ms & sim-anneal & ms \\\hline
 \end{tabular}
 \end{center}
 
-\noindent\textbf{Three observations:}
-\begin{itemize}\itemsep=2pt
-  \item \emph{Simulated annealing matches the oracle on every cell within the brute-force range.}
-        With $(n,k)$ on the $(50,5)$ scale the empirical landscape has no apparent OGP barrier
-        for the dynamics; the chain finds $\sigma^\star$ in $80$\,ms.
-  \item \emph{Greedy is shockingly close to the oracle ($\le 0.11$\,bp).} This is consistent
-        with the spectral structure of $\hat\Sigma$: with one dominant factor, the marginal
-        gain of the $j$-th asset is approximately separable, so a greedy myope is nearly
-        optimal. Phase~3a explains this rigorously via Corollary~\ref{cor:hardness}'s observation
-        that greedy-forward is \emph{not} Hamming-stable along a Gaussian bridge: it inherits
-        the discrete combinatorial cascade structure of the underlying problem.
-  \item \emph{LASSO is uniformly poor (4 to 11\,bp).} The empirical RIP failure of \S\ref{ssec:rip}
-        means that the convex relaxation does not return the combinatorial optimum;
-        the $\ell_1$ penalty over-shrinks and the support extraction is unreliable.
-\end{itemize}
+Reading the table, simulated annealing matches the oracle on every cell within the
+brute-force range: at $(n,k)$ on the $(50,5)$ scale, the empirical landscape has no
+visible OGP barrier for the dynamics, and the chain finds $\sigma^\star$ in
+$80$\,ms. Greedy is close to the oracle ($\le 0.11$\,bp) for a reason that the
+spectral structure of $\hat\Sigma$ explains: with one dominant factor, the marginal
+gain of the $j$-th asset is approximately separable, so a greedy myope is nearly
+optimal. Phase~3a accounts for this rigorously via Corollary~\ref{cor:hardness}, where
+greedy-forward is excluded from the corollary's class because it is not Hamming-stable
+along a Gaussian bridge---a single infinitesimal perturbation can trigger a
+combinatorial cascade. LASSO is uniformly poor (4 to 11\,bp): the empirical RIP failure
+of \S\ref{ssec:rip} means the convex relaxation does not return the combinatorial
+optimum, the $\ell_1$ penalty over-shrinks, and the support extraction is unreliable.
 
-The Phase~2a notebook also reports out-of-sample Sharpe on the held-out $20\%$ block: the
-oracle's training Sharpe is $0.91$ to $1.16$ depending on cell, while the test Sharpe is
-$0.46$ to $0.71$. \emph{Even the oracle overfits}; greedy and SA inherit the same overfitting
-since they recover the same support. We discuss the implications in \S\ref{sec:conclusion}.
+The Phase~2a notebook also reports out-of-sample Sharpe on the held-out $20\%$ block.
+The oracle's training Sharpe is $0.91$ to $1.16$ depending on cell, against test Sharpe
+$0.46$ to $0.71$: even the oracle overfits, and greedy and SA inherit the same
+overfitting because they recover the same support. We pick up the consequences in
+\S\ref{sec:conclusion}.
 
 \begin{figure}[ht]
 \centering
@@ -109,13 +107,13 @@ The Boltzmann measure on the slice
 \(
   \pi_\beta(\sigma) \;\propto\; \exp\bigl(\beta J(\sigma)\bigr),\quad \sigma\in\Omega_{n,k},
 \)
-is the natural object linking the empirical optimisation problem to the OGP machinery. We
-implement a \emph{constrained Metropolis} chain on $\Omega_{n,k}$, viewed as a discrete-time
-martingale-difference dynamics in the energy variable $J(\sigma_t)$ \cite{vershynin}, with swap proposals
-(remove one $i\in S$, add one $j\notin S$) and Metropolis acceptance
-$\min\{1,\exp(\beta(J(S')-J(S)))\}$. With cached row-sums
-$s_v := \sum_{j\in S}\hat\Sigma_{v,j}$, each swap evaluates in $O(1)$ amortised time
-after $O(nk)$ initialisation; this gives the linear-in-$n$ samplers used throughout
+is the natural bridge between the empirical optimisation problem and the OGP machinery.
+We implement a constrained Metropolis chain on $\Omega_{n,k}$, viewed as a
+discrete-time martingale-difference dynamics in the energy variable
+$J(\sigma_t)$~\cite{vershynin}, with swap proposals (remove one $i\in S$, add one
+$j\notin S$) and Metropolis acceptance $\min\{1,\exp(\beta(J(S')-J(S)))\}$. With cached
+row-sums $s_v := \sum_{j\in S}\hat\Sigma_{v,j}$, a swap costs $O(1)$ amortised time
+after $O(nk)$ initialisation, yielding the linear-in-$n$ samplers used throughout
 Phases~3 and~4.
 
 \paragraph{Validation against exact $\pi_\beta$.} On $(n,k)=(20,5)$ the slice has
@@ -137,12 +135,12 @@ $(40,10)$ & $\geq 1500$ & $\geq 1500$ & $\geq 1500$ & $\geq 1500$\\
 \end{tabular}
 \end{center}
 
-The $\tau \ge 1500$ entries are right-censored: the chain failed to reach $\sigma^\star$ in
-the budget. The transition from $(20,5)$ (mixes in $26$ sweeps at $\beta=2\!\times\!10^4$) to
-$(40,10)$ (does not mix even at $\beta=2\!\times\!10^4$) is a clear empirical
-\emph{metastability transition}: the high-$\beta$ Boltzmann measure has multiple basins separated by
-energy barriers that the chain cannot cross in polynomial time. This is exactly the
-algorithmic signature of OGP, a \emph{topological} obstruction to dynamics rather than a
+The $\tau \ge 1500$ entries are right-censored: the chain did not reach $\sigma^\star$
+within the budget. The transition from $(20,5)$ (mixes in $26$ sweeps at
+$\beta=2\!\times\!10^4$) to $(40,10)$ (no mix even at $\beta=2\!\times\!10^4$) is an
+empirical metastability transition: the high-$\beta$ Boltzmann measure has several basins
+separated by energy barriers the chain cannot cross in polynomial time. This is the
+algorithmic signature of OGP -- a topological obstruction to dynamics rather than a
 statistical one. The Phase~3 theory makes the obstruction quantitative.
 
 \begin{figure}[ht]

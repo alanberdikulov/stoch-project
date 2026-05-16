@@ -4,18 +4,18 @@
 \section{A spectral$+$local-improvement algorithm}
 \label{sec:slh}
 
-We design \textsc{Slh}\ (\emph{Spectral-Local Hybrid}), a deterministic algorithm tailored
-to the factor-plus-residual covariance documented in \S\ref{sec:diagnostics}. The seed
+We design \textsc{Slh}\ (Spectral-Local Hybrid), a deterministic algorithm tailored
+to the factor-plus-residual covariance documented in~\S\ref{sec:diagnostics}. The seed
 stage performs a ridge-regularised continuous Markowitz solve, exploiting the dominant
 factor structure of $\hat\Sigma$; the polish stage is a steepest-ascent 1-swap local
-search that exploits the residual quadratic interaction in $J$. We prove an exact-recovery
-proposition under a factor-plus-residual model that matches the empirical regime
-(\cref{prop:slh-recovery}), bench-mark \textsc{Slh}\ against the four baselines of
-\S\ref{sec:lasso}, and discuss its empirical regime placement in
-\S\ref{sec:slh-regime}. We do \emph{not} claim that \textsc{Slh}\ ``circumvents'' the
-hardness corollary of \cref{cor:hardness}: as we explain in \S\ref{sec:slh-regime}, the
-empirical SNR sits in the recovery regime where the corollary is vacuous, and the
-algorithm's success there is not an OGP-related phenomenon.
+search that exploits the residual quadratic interaction in $J$. \cref{prop:slh-recovery}
+gives an exact-recovery proposition under a factor-plus-residual model matching the
+structure of the empirical covariance, and we benchmark \textsc{Slh}\ against the four
+baselines of~\S\ref{sec:lasso}. We do not claim that \textsc{Slh}\ ``circumvents''
+Corollary~\ref{cor:hardness}: as~\S\ref{sec:slh-regime} explains, the empirical SNR sits
+deep in Regime~I (Table~\ref{tab:regime-numbers}), well below the regime where the
+corollary binds, and the algorithm's success on real data is structural rather than
+OGP-related.
 
 \subsection{Algorithm}\label{sec:slh-algorithm}
 
@@ -50,11 +50,11 @@ operations, matching the cost of a single Metropolis sweep (cf.\ \S\ref{sec:ogp-
 
 \subsection{Recovery proposition under factor-plus-residual covariance}\label{sec:slh-recovery}
 
-We analyse \textsc{Slh}\ on a planted-spike instance with covariance matching the structure
-documented in \S\ref{sec:diagnostics}: a rank-$r$ deterministic factor part plus an
-isotropic residual. A pure-isotropic model ($\hat\Sigma=\nu^2 I$) would make the
+We analyse \textsc{Slh}\ on a planted-spike instance with covariance matching the
+structure documented in~\S\ref{sec:diagnostics}: a rank-$r$ deterministic factor part
+plus an isotropic residual. A pure-isotropic $\hat\Sigma=\nu^2 I$ would make the
 proposition tautological (top-$k$ of $\hat\mu$ already solves the problem); the factor
-part is the relevant complication.
+part is the substantive complication.
 
 \begin{theorem}[Exact recovery of \textsc{Slh}\ under factor-plus-residual covariance]
 \label{prop:slh-recovery}
@@ -140,18 +140,18 @@ the first term strictly negative on the recovery event. The cross-term is $O(1/k
 bounded constant and so cannot reverse the sign at this leading order.
 \end{proof}
 
-\paragraph{Why this is not vacuous (cf.~the $\hat\Sigma=\nu^2 I$ case).} If we had
-$\hat\Sigma=\nu^2 I$, then SLH's seed reduces to top-$k$ of $|\hat\mu|$ directly, and the
-recovery proposition above would degenerate to the textbook ``top-$k$ recovers planted
-support'' statement. The factor part $U\Lambda U^\top$ matters: it (i) inflates the
-variance of $\hat\mu_i$ for stocks loading on the market factor, which would naively
-distort top-$k$ of $\hat\mu$, and (ii) is whitened out by the ridge solve in
-\eqref{eq:ridge-decomp}, so that SLH's top-$k$ of $|w_{\mathrm{init}}|$ ranks stocks by
-\emph{idiosyncratic} return rather than by the market-factor-distorted $\hat\mu$. The proof
-above shows this whitening preserves exact recovery as long as the residual SNR exceeds
-$a_{\mathrm{rec}}$. On real S\&P data Phase~1 documents $r=5$ to $32$ factor eigenvalues
-and a residual variance $\nu^2 = (1/n)\mathrm{tr}(\hat\Sigma_\perp)$ that is the relevant
-$\nu$ in \eqref{eq:a-rec-factor}.
+\paragraph{Why this is not vacuous (cf.\ the $\hat\Sigma=\nu^2 I$ case).} If we had
+$\hat\Sigma=\nu^2 I$, the \textsc{Slh}\ seed would reduce to top-$k$ of $|\hat\mu|$,
+and the proposition above would degenerate to the textbook ``top-$k$ recovers planted
+support'' statement. The factor part $U\Lambda U^\top$ matters in two ways. It inflates
+the variance of $\hat\mu_i$ for stocks loading on the market factor, which would
+distort a raw top-$k$ of $\hat\mu$; and it is whitened out by the ridge solve
+in~\eqref{eq:ridge-decomp}, so top-$k$ of $|w_{\mathrm{init}}|$ ranks stocks by
+idiosyncratic return rather than by the factor-distorted $\hat\mu$. The proof shows
+this whitening preserves exact recovery as long as the residual SNR exceeds
+$a_{\mathrm{rec}}$. On real S\&P data Phase~1 documents $r\in[5,32]$ factor
+eigenvalues and a residual variance $\nu^2 = (1/n)\mathrm{tr}(\hat\Sigma_\perp)$ that
+is the relevant $\nu$ in~\eqref{eq:a-rec-factor}.
 
 \paragraph{Slepian-Sudakov-Fernique tightening.} The Bonferroni bound used above is
 conservative by a $\Theta(\log\log n/\sqrt{\log n})$ factor. The Sudakov-Fernique
@@ -168,12 +168,11 @@ transition is thus precisely the Slepian-Sudakov-Fernique log-log correction.
 
 \subsection{Where on the regime axis does \textsc{Slh} operate?}
 \label{sec:slh-regime}
- 
-A natural temptation is to claim that \textsc{Slh}\ ``escapes'' the
-hardness corollary~\ref{cor:hardness}. We resist this temptation here,
-because the claim is only meaningful for synthetic instances in
-Regime~II/III; on real S\&P data the corollary is vacuous for a different
-reason.
+
+There is a natural temptation to read \textsc{Slh}\ as ``escaping'' the hardness
+corollary~\ref{cor:hardness}. We resist that reading, because it is only meaningful for
+synthetic instances in Regime~II/III; on real S\&P data the corollary is vacuous for a
+different and unrelated reason.
  
 \paragraph{Top-$k$ thresholding is $\eta$-Hamming-stable.}
 Along a Gaussian input bridge $\hat\mu_s = \sqrt{1-s}\,\hat\mu_0 +
@@ -185,60 +184,52 @@ size $1$, so the total Hamming displacement of \textsc{Slh}'s seed along
 the bridge is $O(n) \le \eta k$ for $\eta = O(n/k)$. The polish stage adds at most $O(k)$ further swaps per bridge step,
 preserving stability.
  
-\paragraph{Why does \textsc{Slh} recover on synthetic Regime~III instances?}
-Because Corollary~\ref{cor:hardness} is vacuous in Regime~III. ~\ref{sec:slh-recovery} forces $\mathcal A(\hat\mu_0) = \sigma^\star$
-already at $s = 0$, so the bridge never starts with overlap $\rho$ and
-the corollary's hypothesis fails. The synthetic recovery curve of
-Fig.~\ref{fig:slh-recovery} exhibits the predicted phase transition at
-$\hat a_{50\%} \approx 2.25$.
- 
-\paragraph{Why does \textsc{Slh} recover on real S\&P data?}
-For a different and orthogonal reason. By Table~\ref{tab:regime-numbers}
-the empirical SNR $\hat a \in [0.02, 0.05]$ sits deep in Regime~I, where
-the planted-spike model predicts no recovery and is itself a poor fit
-(\S\ref{sec:regimes}). \textsc{Slh}'s in-sample success on real data is
-not explained by Regime~III; it is explained by three structural
-features of $(\hat\mu, \hat\Sigma)$ on S\&P 500:
-\begin{enumerate}
-  \item $C(n,k)$ is small (at most $\sim 2\times 10^6$ on the brute-force
-  cells), so the discrete optimisation has limited combinatorial depth;
-  \item $\hat\Sigma$ is dominated by a single rank-one market factor
-  (\S\ref{ssec:spectrum}), so the marginal contribution of each asset
-  is nearly separable and greedy-style methods are nearly optimal;
-  \item the quadratic coupling $\gamma/k^2$ is small at $\gamma=10$,
-  $k\in[5,10]$, so the residual interaction between supports is weak
-  and a single polish pass suffices.
-\end{enumerate}
-None of these is an OGP statement. \textsc{Slh}\ is the right algorithm
-for this dataset because it exploits the factor structure (the seed) and
-then resolves the small residual quadratic interaction (the polish);
-the theorems of \S\ref{thm:detect} and \S\ref{thm:forbid}
-are not what makes it work on real data.
- 
+\paragraph{Why \textsc{Slh} recovers on synthetic Regime~III instances.}
+Because Corollary~\ref{cor:hardness} is vacuous in Regime~III:
+Theorem~\ref{prop:slh-recovery} forces $\mathcal A(\hat\mu_0) = \sigma^\star$ already
+at $s = 0$, so the bridge never starts at overlap $\rho$ and the corollary's
+hypothesis fails. The synthetic recovery curve of Fig.~\ref{fig:slh-recovery} shows
+the predicted phase transition at $\hat a_{50\%} \approx 2.25$.
+
+\paragraph{Why \textsc{Slh} recovers on real S\&P data.}
+For a different and unrelated reason. By Table~\ref{tab:regime-numbers}, the empirical
+SNR $\hat a \in [0.02, 0.05]$ sits deep in Regime~I, where the planted-spike model
+predicts no recovery and is itself a poor fit (\S\ref{sec:regimes}). \textsc{Slh}'s
+in-sample success on real data is not a Regime~III effect; it is explained by three
+structural features of $(\hat\mu, \hat\Sigma)$ on S\&P~500: $C(n,k)$ is small (at most
+$\sim 2\times 10^6$ on the brute-force cells), so the discrete optimisation has limited
+combinatorial depth; $\hat\Sigma$ is dominated by a rank-one market factor
+(\S\ref{ssec:spectrum}), making the marginal contribution of each asset nearly
+separable so greedy-style methods are nearly optimal; and the quadratic coupling
+$\gamma/k^2$ is small at $\gamma=10$, $k\in[5,10]$, so the residual interaction between
+supports is weak and one polish pass suffices. None of these is an OGP statement.
+\textsc{Slh}\ is the right algorithm for this dataset because it exploits the factor
+structure (the seed) and then cleans up the small residual quadratic interaction (the
+polish); Theorems~\ref{thm:detect} and~\ref{thm:forbid} are not what makes it work on
+real data.
+
 \paragraph{Where the OGP machinery is binding.}
-On synthetic instances in Regime~II the corollary actively excludes
-\textsc{Slh}: on the calibrated planted-spike instances of
-\S\ref{ssec:p3b-synth}, \textsc{Slh}-style top-$k$ thresholding
-fails for $a < 2.25$ while simulated annealing succeeds. The synthetic
-recovery curve of Fig.~\ref{fig:slh-recovery} confirms this. On real
-S\&P data we never enter Regime~II under the daily-return calibration,
-so the corollary's exclusion does not directly translate into a
-real-data prediction; whether shrinkage of $\hat\mu$
-(\S\ref{ssec:ogp-discussion}) would move us into Regime~II is the principal
-practical follow-up question raised by this analysis.
+On synthetic instances in Regime~II the corollary actively excludes \textsc{Slh}: on
+the calibrated planted-spike instances of~\S\ref{ssec:p3b-synth}, \textsc{Slh}-style
+top-$k$ thresholding fails for $a < 2.25$, while simulated annealing succeeds. The
+synthetic recovery curve of Fig.~\ref{fig:slh-recovery} confirms this. On real S\&P
+data we never enter Regime~II under the daily-return calibration, so the corollary's
+exclusion does not directly translate into a real-data prediction; whether shrinkage
+of $\hat\mu$ (\S\ref{ssec:ogp-discussion}) could move the problem into Regime~II is
+the principal practical follow-up question raised by this analysis.
 
 \subsection{Empirical performance}\label{sec:slh-empirical}
 
-\textbf{Synthetic recovery curve.} On the planted-spike model $(n,k,\nu)=(200,40,1.0)$ over
-$50$ trials per SNR $a\in[0.4, 2.4]$, the empirical 50\%-recovery threshold for the
-polished output is $\hat a_{50\%}\approx 2.25$, below the Bonferroni prediction
-$a_{\mathrm{rec}}=2.64$ by approximately $0.4$. This is the Sudakov-Fernique correction
-discussed after \cref{prop:slh-recovery}: the Bonferroni bound is conservative by
+\textbf{Synthetic recovery curve.} On the planted-spike model $(n,k,\nu)=(200,40,1.0)$
+over $50$ trials per SNR $a\in[0.4, 2.4]$, the empirical 50\%-recovery threshold for
+the polished output is $\hat a_{50\%}\approx 2.25$, about $0.4$ below the Bonferroni
+prediction $a_{\mathrm{rec}}=2.64$. This gap is the Sudakov-Fernique correction
+discussed after~\cref{prop:slh-recovery}: the Bonferroni bound is conservative by
 $\Theta(\log\log n / \sqrt{\log n})$, which at $n=200$ evaluates to $\approx 0.37$ and
 brings the sharp threshold to $\approx 2.27$, matching $\hat a_{50\%}$. The polished
-curve sits strictly above the seed-only curve for every sub-threshold $a$
-(\cref{fig:slh-recovery}); this is the empirical signature that the polish stage adds
-recovery probability the spectral seed alone cannot reach.
+curve sits strictly above the seed-only curve at every sub-threshold $a$
+(\cref{fig:slh-recovery}), evidence that the polish stage adds recovery probability
+the spectral seed cannot reach on its own.
 
 \begin{figure}[ht]
 \centering
@@ -251,19 +242,18 @@ the bound is asymptotically tight up to lower-order log-log corrections.}
 \label{fig:slh-recovery}
 \end{figure}
 
-\textbf{Real S\&P~500 benchmark.} On the same $(n,k)$ grid as \S\ref{sec:oracle} with five
-random instances per cell ($\gamma=10$), \textsc{Slh}\ matches the brute-force oracle on
-\emph{every cell} (mean optimality gap $\le 10^{-3}$ bp, oracle-match rate
-$\ge 0.8$ on $(n,k)=(15,4)$ and $1.0$ elsewhere), strictly outperforming
-greedy-forward (gaps $0.01$ to $0.12$\,bp), simulated annealing (matches on
-$(10,3)$ through $(20,5)$, degrades to $0.4$\,bp on $(50,5)$), LASSO ($2$ to $6$\,bp), and
-top-eigenvector ($11$ to $22$\,bp). Importantly the spectral seed alone (\textsc{Slh}-seed) gives gaps
-of $2$ to $4$\,bp, comparable to LASSO, and the polish stage closes essentially
-the entire remaining gap (Figure~\ref{fig:slh-real-benchmark}). This isolates the
-contribution of the local-improvement step on real data and confirms the design intuition:
-the spectral seed exploits the dominant rank-one factor structure documented in
-\S\ref{sec:diagnostics}, while the polish exploits the full quadratic interaction term that
-the seeding ignores.
+\textbf{Real S\&P~500 benchmark.} On the same $(n,k)$ grid as~\S\ref{sec:oracle} with
+five random instances per cell ($\gamma=10$), \textsc{Slh}\ matches the brute-force
+oracle on every cell (mean optimality gap $\le 10^{-3}$\,bp, oracle-match rate
+$\ge 0.8$ on $(15,4)$ and $1.0$ elsewhere), strictly outperforming greedy-forward (gaps
+$0.01$ to $0.12$\,bp), simulated annealing (matches on $(10,3)$ through $(20,5)$,
+degrades to $0.4$\,bp on $(50,5)$), LASSO ($2$ to $6$\,bp), and top-eigenvector ($11$
+to $22$\,bp). The spectral seed alone (\textsc{Slh}-seed) gives gaps of $2$ to
+$4$\,bp, comparable to LASSO; the polish stage closes essentially the entire remaining
+gap (Figure~\ref{fig:slh-real-benchmark}). The split isolates the contribution of the
+local-improvement step on real data and confirms the design intuition: the spectral
+seed picks up the dominant rank-one factor structure of~\S\ref{sec:diagnostics}, and
+the polish picks up the residual quadratic interaction that the seed ignores.
 
 \begin{figure}[ht]
 \centering
@@ -278,7 +268,8 @@ matches LASSO/greedy-forward but the polish stage closes the remaining gap.}
 Mean wall-clock per call (across the grid) is $0.07$ to $0.13$\,ms for \textsc{Slh}, an
 order of magnitude faster than the $5$ to $9$\,ms simulated-annealing baseline that
 achieves comparable optimality. \textsc{Slh}\ is therefore both deterministic and orders
-of magnitude cheaper than its closest non-deterministic competitor. On real data, this
-performance is explained simply: the empirical SNR sits above $a_{\mathrm{rec}}$ (Regime
-III in the sense of \S\ref{sec:slh-regime}), so the spectral seed alone almost recovers
-the oracle and the polish closes the residual quadratic-interaction gap.
+of magnitude cheaper than its closest non-deterministic competitor. The mechanism on
+real data is structural, not regime-driven (\S\ref{sec:slh-regime}): the rank-one factor
+dominance of $\hat\Sigma$ makes the spectral seed nearly recover the oracle, and the
+polish closes the small residual quadratic-interaction gap. This is unrelated to the
+Regime~III recovery story that the proposition above describes for synthetic instances.

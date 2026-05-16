@@ -2,11 +2,12 @@
 
 \section{Empirical OGP experiment}\label{sec:ogp-empirical}
 
-The forbidden-overlap interval of Theorem~\ref{thm:forbid} predicts that, on planted-spike
-instances at $a > a_\star(\rho)$, samples from the Boltzmann measure $\pi_\beta$ should
-have planted-overlap distribution with no mass in $(\rho+\delta, y_a-\delta)$ at large
-enough $\beta$. This section quantitatively verifies that prediction, and additionally
-probes the conjectural classical-OGP signature on real S\&P data.
+The forbidden-overlap interval of Theorem~\ref{thm:forbid} predicts that, on
+planted-spike instances at $a > a_\star(\rho)$, samples from the Boltzmann measure
+$\pi_\beta$ have planted-overlap distribution with no mass in
+$(\rho+\delta, y_a-\delta)$ for sufficiently large $\beta$. This section verifies that
+prediction quantitatively, and probes the conjectural classical-OGP signature on real
+S\&P data.
 
 \subsection{Numerical visualisation of the theoretical objects}\label{ssec:p3b-theory-figs}
 
@@ -62,23 +63,24 @@ region; at $\beta\ge 1.5$ the chain is concentrated at $y\ge 0.85$, well past $y
 \end{figure}
 
 The fraction of samples in the strict-interior forbidden region $(\rho+0.05, y_a-0.05)$
-collapses sharply with $\beta$:
+drops sharply with $\beta$:
 \[
   \beta=0:\ 13.5\%; \quad \beta=0.3:\ 90.9\%; \quad
   \beta=0.7:\ 0.25\%; \quad \beta\ge 1.5:\ 0\%.
 \]
-The $\beta=0.3$ row is not in the regime to which Theorem~\ref{thm:forbid} applies: the
-chain is sampling a high-temperature mixture that does \emph{not} concentrate on near-optima.
-Past the transition (anywhere $\beta\ge 0.7$), the predicted forbidden interval is
-essentially empty, a tight quantitative confirmation of the rigorous theorem.
+The $\beta=0.3$ row lies outside the regime where Theorem~\ref{thm:forbid} applies:
+the chain is sampling a high-temperature mixture that does not concentrate on
+near-optima. Past the transition (anywhere $\beta\ge 0.7$), the predicted forbidden
+interval is empty within Monte-Carlo error, a tight quantitative confirmation of the
+theorem.
 
-\paragraph{Pair-overlap (replica) distribution.} For each $\beta$ we also form the
+\paragraph{Pair-overlap (replica) distribution.} For each $\beta$ we also compute the
 two-replica overlap $q(\sigma^{(1)},\sigma^{(2)})$ between independent chains
-(Figure~\ref{fig:synth-pair}). The mean pair-overlap follows the same monotone trajectory
-as the planted overlap, transitioning from $q\approx\rho$ at low $\beta$ to $q\approx 1$ at
-high $\beta$ \emph{without lingering at intermediate values}. This is the spin-glass
-diagnostic that the literature uses to detect classical OGP; on the linear model it reduces
-to the planted-overlap collapse above.
+(Figure~\ref{fig:synth-pair}). The mean pair-overlap traces the same monotone
+trajectory as the planted overlap, moving from $q\approx\rho$ at low $\beta$ to
+$q\approx 1$ at high $\beta$ without dwelling at intermediate values. This is the
+spin-glass diagnostic used in the literature to detect classical OGP; on the linear
+model it reduces to the planted-overlap collapse above.
 
 \begin{figure}[ht]
 \centering
@@ -104,10 +106,10 @@ from $0.20$ ($=\rho$) at $\beta=0$ to $0.80$ at $\beta=10^5$.}
 \label{fig:real-overlap}
 \end{figure}
 
-The transition is \emph{smooth and unimodal}: no interior gap is visible. Mean overlap
-rises from $0.20$ at $\beta=0$ to $0.27$ at $\beta=5\!\times\!10^3$ to $0.80$ at $\beta=10^5$;
-the corresponding pair-overlap distribution (Figure~\ref{fig:real-pair}) exhibits the same
-continuous progression.
+The transition is smooth and unimodal, with no interior gap visible. Mean overlap
+rises from $0.20$ at $\beta=0$ to $0.27$ at $\beta=5\!\times\!10^3$ to $0.80$ at
+$\beta=10^5$; the corresponding pair-overlap distribution
+(Figure~\ref{fig:real-pair}) shows the same continuous progression.
 
 \begin{figure}[ht]
 \centering
@@ -115,19 +117,19 @@ continuous progression.
 \caption{Real S\&P data two-chain pair-overlap distribution at $(n,k)=(30,6)$ with the full quadratic Hamiltonian. The transition from $q\approx\rho$ to $q\approx 0.74$ is smooth across the $\beta$ sweep, with no bimodal interior gap that would signal a classical OGP. Cf.\ \S\ref{ssec:ogp-discussion} for why an interior gap is conjectured to require larger $n$.}\label{fig:real-pair}
 \end{figure}
 
-\paragraph{Honest interpretation.} A classical interior OGP would manifest as a bimodal
+\paragraph{Interpretation.} A classical interior OGP would show up as a bimodal
 overlap distribution at intermediate $\beta$, with mass at $\rho$ and at $1$ but a
-forbidden gap in between. We do not observe this on the $(30,6)$ instance.
-This is consistent with the discussion in \S\ref{ssec:ogp-discussion}: the classical-OGP
-conjecture for the full quadratic Hamiltonian is expected to require asymptotic
-$n\to\infty$, and our $(n,k)=(30,6)$ instance is too small for the spin-glass-type
-finite-rank correction to dominate. We leave a rigorous proof of (or refutation of) the
-classical OGP for $J$ as the principal open theoretical question raised by this project.
+forbidden gap in between. We do not see this on the $(30,6)$ instance. The discussion
+in~\S\ref{ssec:ogp-discussion} predicts as much: the classical-OGP conjecture for the
+full quadratic Hamiltonian is expected to require asymptotic $n\to\infty$, and $(30,6)$
+is too small for the spin-glass-type finite-rank correction to dominate. A rigorous
+proof (or refutation) of classical OGP for $J$ is the principal open theoretical
+question this project raises.
 
-\paragraph{What is verified.} The single-sided forbidden interval
-$[\rho, y_a]$ of Theorem~\ref{thm:forbid} is verified to high precision on synthetic data
-matched to the empirical SNR (Figure~\ref{fig:synth-overlap}). The mixing-time blow-up
-of \S\ref{ssec:p2b} on $(40,10)$ provides separate empirical evidence that the geometric
-barrier is real on the full quadratic objective; the OGP theory gives a partial explanation
-(via the linear-score forbidden interval) and motivates the algorithmic design of
-\S\ref{sec:slh}.
+\paragraph{What is verified.} The single-sided forbidden interval $[\rho, y_a]$ of
+Theorem~\ref{thm:forbid} is verified to high precision on synthetic data matched to
+the empirical SNR (Figure~\ref{fig:synth-overlap}). The mixing-time blow-up
+of~\S\ref{ssec:p2b} on $(40,10)$ supplies separate empirical evidence that the
+geometric barrier is real on the full quadratic objective; the OGP theory gives a
+partial explanation (via the linear-score forbidden interval) and motivates the
+algorithmic design of~\S\ref{sec:slh}.
